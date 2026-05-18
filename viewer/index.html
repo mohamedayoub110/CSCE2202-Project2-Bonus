@@ -1,0 +1,3290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tutoring Schedule Planner</title>
+<style>
+:root {
+  --bg-1: #fdf6ee;
+  --bg-2: #f0e8fd;
+  --ink: #1c1a2e;
+  --ink-soft: #5a5670;
+  --ink-faint: #8a8499;
+  --card: #ffffff;
+  --line: #ece4f0;
+  --line-strong: #d5cbe0;
+  --shadow-sm: 0 2px 8px rgba(28, 26, 46, 0.04);
+  --shadow-md: 0 10px 30px rgba(28, 26, 46, 0.08);
+  --shadow-lg: 0 18px 50px rgba(28, 26, 46, 0.12);
+  --primary: #6366f1;
+  --primary-strong: #4f46e5;
+  --primary-soft: #eef2ff;
+  --good: #10b981;
+  --good-soft: #ecfdf5;
+  --bad: #ef4444;
+  --bad-soft: #fee2e2;
+  --warn: #f59e0b;
+  --warn-soft: #fef3c7;
+  --info: #0ea5e9;
+  --info-soft: #e0f2fe;
+
+  --c-regular: #6366f1;
+  --c-regular-soft: #e0e7ff;
+  --c-support: #f97316;
+  --c-support-soft: #ffedd5;
+  --c-athlete: #ec4899;
+  --c-athlete-soft: #fce7f3;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 0% 0%, var(--bg-2) 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, #ffe8d8 0%, transparent 55%),
+    var(--bg-1);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ============ Hero ============ */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 8px;
+  gap: 16px;
+}
+.hero-title { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.hero-sub { margin: 2px 0 0; font-size: 12px; color: var(--ink-soft); max-width: 780px; }
+.hero-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.btn {
+  border: 0; cursor: pointer;
+  font-family: inherit; font-weight: 600; font-size: 13px;
+  padding: 9px 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: transform 0.08s, box-shadow 0.16s, background 0.16s;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 6px 18px rgba(99,102,241,0.35); }
+.btn-primary:hover { background: var(--primary-strong); }
+.btn-ghost { background: rgba(255,255,255,0.65); border: 1px solid var(--line); color: var(--ink); }
+.btn-ghost:hover { background: white; }
+.btn-warn { background: var(--warn); color: white; }
+.btn-warn:hover { background: #d97706; }
+.btn-bad { background: var(--bad-soft); color: var(--bad); border: 1px solid #fca5a5; }
+.btn-bad:hover { background: #fecaca; }
+.btn-info { background: var(--info); color: white; }
+.btn-info:hover { background: #0284c7; }
+
+/* ============ Week selector ============ */
+.weekstrip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 28px 10px;
+}
+.weekstrip-label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  flex-shrink: 0;
+}
+.week-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+.week-tab {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s, color 0.12s;
+}
+.week-tab.active { background: var(--primary); color: white; }
+.week-tab .week-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+.week-tab.has-issues .week-dot { background: var(--warn); }
+.week-tab.complete .week-dot { background: var(--good); }
+.week-tab.active .week-dot { background: white; }
+.week-meta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.week-meta .week-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+.week-meta-item .key {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+}
+
+/* ============ Stats row ============ */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 0 28px 10px;
+}
+.stat {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+.stat .label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.stat .value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.stat .value .of { font-size: 12px; font-weight: 500; color: var(--ink-soft); }
+.stat .accent {
+  position: absolute; right: -15px; top: -15px;
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  opacity: 0.7; z-index: 0;
+}
+.stat > * { position: relative; z-index: 1; }
+.stat.stat-good .accent { background: var(--good-soft); }
+.stat.stat-warn .accent { background: var(--warn-soft); }
+.stat.stat-bad .accent { background: var(--bad-soft); }
+.stat.stat-info .accent { background: var(--info-soft); }
+.stat .hint { font-size: 10px; color: var(--ink-soft); }
+
+/* ============ Phase progress bar ============ */
+.progress-row {
+  padding: 0 28px 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+.progress-track {
+  flex: 1; height: 6px;
+  background: var(--line);
+  border-radius: 999px;
+  position: relative; overflow: hidden;
+}
+.progress-step {
+  position: absolute; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.progress-step.s2 { background: linear-gradient(90deg, var(--c-athlete), #be185d); }
+.progress-label { font-weight: 600; font-size: 11.5px; color: var(--ink); white-space: nowrap; }
+.progress-step-marker {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 1px;
+  background: var(--ink-faint);
+}
+
+/* ============ Filter bar ============ */
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 28px 8px;
+  flex-wrap: wrap;
+}
+.filter-group {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--card);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.filter-group .filt-label {
+  font-size: 10px; color: var(--ink-soft);
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-left: 10px; padding-right: 4px;
+}
+.filter-pill {
+  border: 0; background: transparent;
+  font-family: inherit;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--ink-soft);
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filter-pill.active { background: var(--primary); color: white; }
+.filter-pill:not(.active):hover { background: var(--primary-soft); color: var(--primary-strong); }
+
+/* ============ Layout ============ */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 12px;
+  padding: 0 28px 10px;
+  min-height: 0;
+}
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.card-head {
+  padding: 12px 18px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.card-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.card-body {
+  flex: 1; overflow: auto;
+  padding: 6px 18px 16px;
+  min-height: 0;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  align-items: center;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.dot.regular { background: var(--c-regular); }
+.dot.support { background: var(--c-support); }
+.dot.athlete { background: var(--c-athlete); }
+
+/* ============ Gantt ============ */
+.gantt {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  grid-template-rows: 50px 1fr;
+  position: relative;
+  min-height: 360px;
+  width: 100%; height: 100%;
+}
+.gantt-corner {
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 6px 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gantt-header { position: relative; border-bottom: 1px solid var(--line); }
+.day-mark {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--line);
+}
+.day-label {
+  position: absolute; top: 6px;
+  padding-left: 8px;
+  font-size: 11px; font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.hour-label {
+  position: absolute; bottom: 4px;
+  font-size: 9px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+.gantt-rows { position: relative; display: flex; flex-direction: column; }
+.pool-divider {
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: rgba(99, 102, 241, 0.08);
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+.pool-divider.grad { background: rgba(236, 72, 153, 0.08); }
+.pool-divider.paid { background: rgba(245, 158, 11, 0.12); }
+.tutor-label {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-bottom: 1px dashed var(--line);
+  position: relative;
+}
+.tutor-label.sick {
+  opacity: 0.45;
+  background: var(--bad-soft);
+}
+.tutor-label.sick::after {
+  content: "🤒 sick this week";
+  position: absolute;
+  right: 8px;
+  font-size: 9px;
+  color: var(--bad);
+  font-weight: 700;
+  background: white;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.tutor-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.tutor-name { font-size: 12px; font-weight: 600; flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tutor-tags { display: flex; gap: 3px; flex-shrink: 0; }
+.tag {
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tag.lang-en { background: #e0e7ff; color: #4338ca; }
+.tag.lang-ar { background: #fef3c7; color: #92400e; }
+.tag.lang-bi { background: #f3e8ff; color: #6d28d9; }
+.tag.paid { background: var(--warn-soft); color: #92400e; }
+
+.gantt-body { position: relative; }
+.row-band {
+  position: absolute; left: 0; right: 0;
+  height: 32px;
+  border-bottom: 1px dashed var(--line);
+}
+.row-band.zebra { background: rgba(99, 102, 241, 0.025); }
+.row-band.grad { background: rgba(236, 72, 153, 0.04); }
+.row-band.grad.zebra { background: rgba(236, 72, 153, 0.06); }
+.row-band.paid { background: rgba(245, 158, 11, 0.04); }
+.row-band.paid.zebra { background: rgba(245, 158, 11, 0.07); }
+.row-band.sick {
+  background: repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 8px, transparent 8px 16px);
+}
+.pool-band {
+  position: absolute; left: 0; right: 0;
+  height: 24px;
+  background: rgba(99, 102, 241, 0.08);
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+.pool-band.grad { background: rgba(236, 72, 153, 0.08); }
+.pool-band.paid { background: rgba(245, 158, 11, 0.12); }
+
+.external-block {
+  position: absolute;
+  height: 24px;
+  background: repeating-linear-gradient(45deg, rgba(28,26,46,0.10) 0 4px, transparent 4px 8px);
+  border: 1px solid rgba(28,26,46,0.18);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.slot {
+  position: absolute;
+  height: 24px;
+  border-radius: 7px;
+  background: #f4f1fa;
+  border: 1.5px dashed #d8d1ed;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  gap: 3px;
+  font-size: 9.5px;
+  color: var(--ink-soft);
+  cursor: default;
+  overflow: hidden;
+  transition: background 0.25s, border-color 0.25s, transform 0.15s, box-shadow 0.2s;
+}
+.slot.modality-online { border-style: dotted; }
+.slot:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); z-index: 5; }
+.slot.filled { border-style: solid; color: var(--ink); font-weight: 600; }
+.slot.filled.regular { background: var(--c-regular-soft); border-color: var(--c-regular); }
+.slot.filled.support { background: var(--c-support-soft); border-color: var(--c-support); }
+.slot.filled.athlete { background: var(--c-athlete-soft); border-color: var(--c-athlete); }
+.slot.overbook {
+  outline: 2px solid var(--warn);
+  outline-offset: 0px;
+}
+.slot.changed { animation: pop 0.45s ease; }
+.slot.removed { animation: fadeOut 0.45s ease; }
+@keyframes pop {
+  0%   { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+  60%  { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(99,102,241,0); }
+  100% { transform: scale(1); }
+}
+@keyframes fadeOut {
+  0% { background: #fecaca; border-color: #fca5a5; }
+  100% { background: #f4f1fa; border-color: #d8d1ed; }
+}
+.slot .icons {
+  display: flex; gap: 1px;
+  font-size: 8.5px;
+  margin-left: auto;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+.slot .bubbles { display: flex; gap: 2px; flex-shrink: 0; }
+.student-bubble {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  font-size: 8.5px; font-weight: 700; color: white;
+  flex-shrink: 0;
+  position: relative;
+}
+.student-bubble.continuity::after {
+  content: "★";
+  position: absolute;
+  top: -5px; right: -3px;
+  font-size: 8px;
+  color: var(--warn);
+  text-shadow: 0 0 2px white;
+}
+.student-bubble.regular { background: var(--c-regular); }
+.student-bubble.support { background: var(--c-support); }
+.student-bubble.athlete { background: var(--c-athlete); }
+.empty-mark { font-size: 9px; color: var(--ink-faint); }
+
+/* ============ Side panel ============ */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.callout {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.callout::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px; background: var(--primary);
+}
+.callout.callout-good::before { background: var(--good); }
+.callout.callout-bad::before { background: var(--bad); }
+.callout.callout-warn::before { background: var(--warn); }
+.callout.callout-info::before { background: var(--info); }
+.callout.callout-neutral::before { background: #cbd5e1; }
+.callout-label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.callout-text { font-size: 13px; line-height: 1.45; }
+.callout-meta { margin-top: 4px; font-size: 11px; color: var(--ink-soft); }
+
+.breakdown-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+.breakdown-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 11.5px;
+}
+.breakdown-row .br-count {
+  font-weight: 700;
+  color: var(--bad);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.breakdown-row .br-label { color: var(--ink-soft); line-height: 1.3; }
+.breakdown-row .br-bar {
+  grid-column: 1 / -1;
+  height: 3px; border-radius: 2px;
+  background: var(--line);
+  position: relative;
+  margin: 2px 0;
+}
+.breakdown-row .br-bar > span {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--warn);
+  border-radius: 2px;
+}
+
+.waiting-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  max-height: 360px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.waiting-head {
+  padding: 10px 14px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.waiting-body {
+  padding: 2px 4px 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+.waiting-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.waiting-item:hover { background: var(--primary-soft); }
+.waiting-name {
+  font-size: 11.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pri-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  font-size: 8.5px; font-weight: 700; color: white;
+}
+.pri-icon.regular { background: var(--c-regular); }
+.pri-icon.support { background: var(--c-support); }
+.pri-icon.athlete { background: var(--c-athlete); }
+.waiting-flags { display: flex; gap: 3px; }
+.waiting-flag {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--line); color: var(--ink-soft);
+}
+.waiting-flag.cap { background: var(--info-soft); color: #075985; }
+.waiting-flag.xt { background: var(--c-athlete-soft); color: #be185d; }
+.waiting-why {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.waiting-more {
+  text-align: center;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+/* ============ Phase 3 controls ============ */
+.phase3-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+.phase3-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.phase3-sub {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.phase3-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phase3-actions .btn {
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+/* ============ Controls ============ */
+.controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  padding: 8px 28px 14px;
+  align-items: center;
+}
+.transport { display: flex; align-items: center; gap: 6px; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.12s, color 0.12s, transform 0.06s;
+  box-shadow: var(--shadow-sm);
+}
+.icon-btn:hover { background: var(--primary-soft); color: var(--primary-strong); }
+.icon-btn:active { transform: translateY(1px); }
+.icon-btn.primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  width: 40px; height: 40px;
+  box-shadow: 0 8px 22px rgba(99,102,241,0.35);
+}
+.icon-btn.primary:hover { background: var(--primary-strong); color: white; }
+.scrub { display: flex; align-items: center; gap: 12px; }
+.scrub input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--p, 0%), var(--line) var(--p, 0%), var(--line) 100%);
+  outline: none;
+}
+.scrub input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: var(--card);
+  border: 3px solid var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.scrub-meta { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--card);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+}
+.speed button {
+  border: 0; background: transparent;
+  font-family: inherit; font-weight: 600;
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.speed button.active { background: var(--primary); color: white; }
+
+/* ============ Drawer ============ */
+.drawer { position: fixed; inset: 0; display: none; z-index: 100; }
+.drawer.open { display: block; }
+.drawer-scrim {
+  position: absolute; inset: 0;
+  background: rgba(28, 26, 46, 0.35);
+  backdrop-filter: blur(4px);
+  animation: scrim 0.18s ease;
+}
+@keyframes scrim { from { opacity: 0; } to { opacity: 1; } }
+.drawer-card {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, 92vw);
+  max-height: 92vh;
+  background: var(--card);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  padding: 24px 28px;
+  animation: pop2 0.22s ease;
+  display: flex; flex-direction: column;
+  overflow: auto;
+}
+@keyframes pop2 {
+  from { transform: translate(-50%, -45%); opacity: 0.5; }
+  to   { transform: translate(-50%, -50%); opacity: 1; }
+}
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.drawer-title { font-size: 20px; font-weight: 700; }
+.drawer-sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+.drawer-close {
+  border: 0; background: var(--line); color: var(--ink);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  font-size: 16px; cursor: pointer;
+}
+.drawer-tabs {
+  display: flex; gap: 6px;
+  margin: 12px 0 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.drawer-tabs button {
+  border: 0; background: transparent;
+  font-family: inherit; font-weight: 600; font-size: 12.5px;
+  color: var(--ink-soft);
+  padding: 6px 10px; border-radius: 999px;
+  cursor: pointer;
+}
+.drawer-tabs button.active { background: var(--primary-soft); color: var(--primary-strong); }
+.drawer-pane { display: none; }
+.drawer-pane.active { display: block; }
+.field { margin-top: 14px; }
+.field-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.field-label { font-size: 13px; font-weight: 600; }
+.field-value { font-size: 13px; font-weight: 700; color: var(--primary-strong); font-variant-numeric: tabular-nums; }
+.field-hint { font-size: 10.5px; color: var(--ink-soft); margin-top: 2px; }
+.field input[type="range"] {
+  width: 100%; margin-top: 6px;
+  -webkit-appearance: none;
+  height: 8px; border-radius: 999px;
+  background: linear-gradient(to right, var(--primary) var(--p, 50%), var(--line) var(--p, 50%));
+  outline: none;
+}
+.field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  background: var(--card);
+  border: 3px solid var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.drawer-foot { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ============ Phase chip ============ */
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+.phase-chip .puls {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.phase-chip.done { background: var(--good-soft); color: #047857; }
+.phase-chip.done .puls { background: var(--good); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.7);} }
+
+/* ============ Tooltip ============ */
+.tooltip {
+  position: fixed;
+  background: var(--ink); color: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(-10px);
+  transition: opacity 0.12s;
+  z-index: 60;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  font-variant-numeric: tabular-nums;
+  max-width: 360px;
+}
+.tooltip.show { opacity: 1; }
+.tooltip .t-row { display: flex; justify-content: space-between; gap: 12px; }
+.tooltip .t-row span:first-child { color: rgba(255,255,255,0.55); }
+.tooltip .t-divider { margin: 5px 0; border-top: 1px solid rgba(255,255,255,0.18); }
+.tooltip strong { color: white; }
+
+/* ============ Help ============ */
+.help h3 { font-size: 13px; margin: 14px 0 4px; }
+.help h3:first-child { margin-top: 0; }
+.help p { font-size: 12px; color: var(--ink-soft); line-height: 1.55; margin: 4px 0; }
+.help ul { font-size: 12px; color: var(--ink-soft); line-height: 1.55; padding-left: 18px; margin: 4px 0; }
+.help b, .help strong { color: var(--ink); }
+.help table { width: 100%; font-size: 11.5px; border-collapse: collapse; margin: 4px 0; }
+.help table td { padding: 5px 8px; border-top: 1px dashed var(--line); vertical-align: top; }
+.help table td:first-child { color: var(--ink); font-weight: 600; width: 36%; }
+
+/* ============ Onboarding ============ */
+.onboarding {
+  position: fixed; inset: 0;
+  display: none; z-index: 90;
+  align-items: center; justify-content: center;
+  background: rgba(28, 26, 46, 0.45);
+  backdrop-filter: blur(2px);
+}
+.onboarding.show { display: flex; }
+.onboarding-card {
+  width: min(580px, 92vw);
+  background: var(--card);
+  border-radius: 20px;
+  padding: 28px 30px 24px;
+  box-shadow: var(--shadow-lg);
+  animation: pop2 0.22s ease;
+}
+.onboarding-card h2 { margin: 0 0 6px; font-size: 22px; }
+.onboarding-card p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
+.onboarding-card .ob-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+.onboarding-card .ob-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin: 10px 0;
+}
+.onboarding-card .ob-grid > div {
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 6px 10px;
+  background: var(--primary-soft);
+  border-radius: 8px;
+}
+.onboarding-card .ob-grid > div strong { color: var(--primary-strong); }
+
+/* ============ Responsive ============ */
+@media (max-width: 1200px) {
+  .main { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+  .hero, .stats, .filterbar, .progress-row, .weekstrip, .main, .controls { padding-left: 14px; padding-right: 14px; }
+  .stats { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div>
+    <h1 class="hero-title">Tutoring Schedule Planner</h1>
+    <p class="hero-sub">A full semester (6 weeks) of tutoring — matching student requests to time slots under 20 hard rules and 7 soft goals. Students may submit multiple requests per week, some drop in the first two weeks, tutors sometimes call in sick, students sometimes don't show up, and rooms are shared with other departments.</p>
+  </div>
+  <div class="hero-actions">
+    <button id="helpBtn" class="btn btn-ghost">How to read this</button>
+    <button id="settingsBtn" class="btn btn-ghost">Change setup</button>
+    <button id="restartBtn" class="btn btn-primary">Run full semester</button>
+  </div>
+</header>
+
+<section class="weekstrip">
+  <span class="weekstrip-label">Semester</span>
+  <div class="week-tabs" id="weekTabs"></div>
+  <div class="week-meta" id="weekMeta">
+    <span class="week-meta-item"><span class="key">drops</span><span id="kWdrops">0</span></span>
+    <span class="week-meta-item"><span class="key">sick</span><span id="kWsick">0</span></span>
+    <span class="week-meta-item"><span class="key">overbooked</span><span id="kWover">0</span></span>
+    <span class="week-meta-item"><span class="key">continuity</span><span id="kWcont">0</span></span>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <span class="accent"></span>
+    <span class="label">Placed this week</span>
+    <span class="value"><span id="statPlaced">0</span><span class="of"> / <span id="statTotal">0</span></span></span>
+    <span class="hint">students with a session in this week</span>
+  </div>
+  <div class="stat stat-warn">
+    <span class="accent"></span>
+    <span class="label">Waiting this week</span>
+    <span class="value"><span id="statWaiting">0</span></span>
+    <span class="hint">see reasons in the breakdown →</span>
+  </div>
+  <div class="stat stat-good">
+    <span class="accent"></span>
+    <span class="label">Quality this week</span>
+    <span class="value"><span id="statQuality">0.0</span></span>
+    <span class="hint">higher = better matches + balance</span>
+  </div>
+  <div class="stat stat-info">
+    <span class="accent"></span>
+    <span class="label">Total placed</span>
+    <span class="value"><span id="statSemPlaced">0</span><span class="of"> across the semester</span></span>
+    <span class="hint">summed across all 6 weeks</span>
+  </div>
+  <div class="stat stat-bad">
+    <span class="accent"></span>
+    <span class="label">What's happening</span>
+    <span class="value" style="font-size:15px;"><span id="phaseChip" class="phase-chip"><span class="puls"></span><span id="phaseText">Getting ready…</span></span></span>
+    <span class="hint" id="phaseHint">loading the semester</span>
+  </div>
+</section>
+
+<div class="progress-row">
+  <span class="progress-label" id="progressLeft">Step 1</span>
+  <div class="progress-track">
+    <div id="progressFill" class="progress-step" style="width: 0%;"></div>
+    <div id="progressMarker" class="progress-step-marker" style="left: 50%;"></div>
+  </div>
+  <span class="progress-label" id="progressRight">Step 2</span>
+</div>
+
+<section class="filterbar">
+  <div class="filter-group" id="poolFilter">
+    <span class="filt-label">Pool</span>
+    <button class="filter-pill active" data-v="all">All</button>
+    <button class="filter-pill" data-v="ug">Undergrad</button>
+    <button class="filter-pill" data-v="grad">Graduate</button>
+    <button class="filter-pill" data-v="paid">Paid hourly</button>
+  </div>
+  <div class="filter-group" id="cohortFilter">
+    <span class="filt-label">Priority</span>
+    <button class="filter-pill active" data-v="all">All</button>
+    <button class="filter-pill" data-v="support">Extra support</button>
+    <button class="filter-pill" data-v="athlete">Athletes</button>
+    <button class="filter-pill" data-v="regular">Regular</button>
+  </div>
+  <div class="filter-group" id="modalityFilter">
+    <span class="filt-label">Format</span>
+    <button class="filter-pill active" data-v="all">All</button>
+    <button class="filter-pill" data-v="in-person">In person</button>
+    <button class="filter-pill" data-v="online">Online</button>
+  </div>
+</section>
+
+<main class="main">
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Weekly schedule</div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">
+          Rows = tutors · solid border = in-person · dotted = online · ★ = same tutor as last week · diagonal stripes = sick tutor or external booking
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="dot regular"></span>Regular</span>
+        <span class="legend-item"><span class="dot support"></span>Support</span>
+        <span class="legend-item"><span class="dot athlete"></span>Athlete</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding-top: 6px;">
+      <div id="ganttRoot" class="gantt"></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div id="lastMove" class="callout callout-neutral">
+      <div class="callout-label">What just happened</div>
+      <div class="callout-text" id="lastMoveText">Press <strong>Run full semester</strong> to start.</div>
+      <div class="callout-meta" id="lastMoveMeta"></div>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="breakdown-title">Why people are waiting (this week)</div>
+      <div id="breakdownBody" style="font-size: 11.5px; color: var(--ink-soft);">no waiting list yet</div>
+    </div>
+
+    <div class="waiting-card">
+      <div class="waiting-head">
+        <div class="card-title">Still waiting this week</div>
+        <div style="font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;" id="waitingCount">0</div>
+      </div>
+      <div class="waiting-body" id="waitingList"></div>
+    </div>
+
+    <div class="phase3-card">
+      <div class="phase3-title">Step 3 · Live disruptions</div>
+      <div class="phase3-sub">Simulate things that happen after the schedule is built — students cancel, tutors get sick, no-shows, new requests, course drops.</div>
+      <div class="phase3-actions">
+        <button id="evtArrival" class="btn btn-primary" title="A new student submits a request right now">+ New request</button>
+        <button id="evtCancel"  class="btn btn-bad" title="A student cancels their session">Cancel</button>
+        <button id="evtNoShow"  class="btn btn-warn" title="Student is a no-show — their seat is unused but capacity counted">No-show</button>
+        <button id="evtSick"    class="btn btn-bad" title="A random tutor calls in sick — all their sessions cancelled, students re-placed">🤒 Tutor sick</button>
+        <button id="evtDrop"    class="btn btn-warn" title="A random student drops the course — their requests are removed from the semester">Drop</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="controls">
+  <div class="transport">
+    <button id="rewindBtn" class="icon-btn" title="Start of this week (Home)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+    </button>
+    <button id="stepBackBtn" class="icon-btn" title="Step back (←)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+    </button>
+    <button id="playBtn" class="icon-btn primary" title="Play / Pause (Space)">
+      <svg id="playIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button id="stepFwdBtn" class="icon-btn" title="Step forward (→)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+    </button>
+    <button id="endBtn" class="icon-btn" title="Jump to end of this week (End)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zM13 6v12l8.5-6L13 6z"/></svg>
+    </button>
+  </div>
+  <div class="scrub">
+    <input id="tlSlider" type="range" min="0" max="0" value="0" />
+    <div class="scrub-meta"><span id="tlPos">0</span> / <span id="tlMax">0</span></div>
+  </div>
+  <div class="speed" id="speedGroup">
+    <button data-s="0.5">0.5×</button>
+    <button data-s="1" class="active">1×</button>
+    <button data-s="2">2×</button>
+    <button data-s="4">4×</button>
+    <button data-s="16">16×</button>
+    <button data-s="64">64×</button>
+  </div>
+</footer>
+
+<!-- Drawer -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-scrim" data-close></div>
+  <div class="drawer-card">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title" id="drawerTitle">Change the setup</div>
+        <div class="drawer-sub" id="drawerSub">Tune what the planner has to work with, then run again.</div>
+      </div>
+      <button class="drawer-close" data-close aria-label="Close">×</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-tab="setup">Setup</button>
+      <button class="drawer-tab" data-tab="help">How to read this</button>
+      <button class="drawer-tab" data-tab="rules">All rules</button>
+    </div>
+    <div class="drawer-pane active" data-pane="setup">
+      <div class="field">
+        <div class="field-row"><span class="field-label">How many students?</span><span class="field-value" id="lblStudents">100</span></div>
+        <input type="range" id="rngStudents" min="20" max="400" step="10" value="100" />
+        <div class="field-hint">Each student submits 1–3 requests per week.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">How many tutors?</span><span class="field-value" id="lblTutors">16</span></div>
+        <input type="range" id="rngTutors" min="6" max="30" step="1" value="16" />
+        <div class="field-hint">Mix of undergrad, graduate, and paid hourly.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">How many rooms?</span><span class="field-value" id="lblRooms">10</span></div>
+        <input type="range" id="rngRooms" min="4" max="20" step="1" value="10" />
+        <div class="field-hint">In-person rooms + online platforms. Some are wheelchair-accessible.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Semester length</span><span class="field-value" id="lblWeeks">6 weeks</span></div>
+        <input type="range" id="rngWeeks" min="2" max="14" step="1" value="6" />
+        <div class="field-hint">The planner runs every week. Drops happen in weeks 1–2. Sickness, no-shows, and new requests are sprinkled throughout.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">How hard?</span><span class="field-value" id="lblHard">Medium</span></div>
+        <input type="range" id="rngHard" min="0" max="3" step="1" value="1" />
+        <div class="field-hint">Easy ≈ everyone fits. Crunch = exam week, lots of conflicts.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Priority students</span><span class="field-value" id="lblPri">30%</span></div>
+        <input type="range" id="rngPri" min="0" max="60" step="5" value="30" />
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Arabic-language students</span><span class="field-value" id="lblArabic">30%</span></div>
+        <input type="range" id="rngArabic" min="0" max="70" step="5" value="30" />
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Online-only students</span><span class="field-value" id="lblOnline">25%</span></div>
+        <input type="range" id="rngOnline" min="0" max="60" step="5" value="25" />
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Students who need wheelchair access</span><span class="field-value" id="lblAcc">5%</span></div>
+        <input type="range" id="rngAcc" min="0" max="20" step="1" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Students who need captioning</span><span class="field-value" id="lblCap">5%</span></div>
+        <input type="range" id="rngCap" min="0" max="20" step="1" value="5" />
+        <div class="field-hint">Only specific online platforms support live captioning.</div>
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Students who need extra time</span><span class="field-value" id="lblXT">5%</span></div>
+        <input type="range" id="rngXT" min="0" max="20" step="1" value="5" />
+        <div class="field-hint">Their sessions get 75 minutes instead of the usual 60.</div>
+      </div>
+      <div class="drawer-foot">
+        <button id="drawerReset" class="btn btn-ghost">Reset</button>
+        <button id="drawerApply" class="btn btn-primary">Run with these</button>
+      </div>
+    </div>
+
+    <div class="drawer-pane help" data-pane="help">
+      <h3>The full picture</h3>
+      <p>This simulates a university tutoring center across <strong>a whole semester</strong>. Every week, the planner builds a fresh weekly schedule (Step 1: match, Step 2: improve). Between weeks, things change — some students <strong>drop</strong>, some tutors <strong>get sick</strong>, some students <strong>don't show up</strong>, sometimes new <strong>requests arrive</strong>.</p>
+      <h3>Navigating</h3>
+      <p>Use the <strong>week tabs</strong> at the top to jump between weeks. Each tab shows that week's schedule, waiting list, and reasons.</p>
+      <h3>The two colors of stripes</h3>
+      <p><strong>Diagonal red stripes</strong> on a tutor's row = that tutor is sick this week. <strong>Diagonal gray stripes</strong> in a slot = the room is booked by another department at that time.</p>
+      <h3>The ★ on a student bubble</h3>
+      <p>Means this student is with the <strong>same tutor as last week</strong> for the same topic — continuity bonus.</p>
+      <h3>The yellow outline on a slot</h3>
+      <p>Means it's <strong>overbooked</strong> — capacity +1 because the students likely to want it have a high no-show rate, so the planner sells more seats than physical capacity in expectation. If everyone shows up, one student gets bumped.</p>
+    </div>
+
+    <div class="drawer-pane help" data-pane="rules">
+      <h3>All 20 hard rules</h3>
+      <table>
+        <tr><td>1. Topic qualification</td><td>Tutor must be qualified for the topic.</td></tr>
+        <tr><td>2. Pool routing</td><td>Session pool (UG / Grad / Paid hourly) must match the student's pool.</td></tr>
+        <tr><td>3. Language</td><td>Session's language must serve the student's preferred language.</td></tr>
+        <tr><td>4. Online vs in-person</td><td>Session format must match the student's preference.</td></tr>
+        <tr><td>5. Wheelchair access</td><td>Students needing access only in accessible rooms.</td></tr>
+        <tr><td>6. <b>Captioning</b></td><td>Students needing captioning only in captioning-capable online rooms.</td></tr>
+        <tr><td>7. <b>Extra time</b></td><td>Extra-time students get 75-min sessions; the slot must accommodate that.</td></tr>
+        <tr><td>8. Group size</td><td>1-on-1 students never put in a group slot.</td></tr>
+        <tr><td>9. Tutor weekly cap</td><td>10h undergrad, 20h graduate, paid hourly capped by budget.</td></tr>
+        <tr><td>10. Tutor daily cap</td><td>No tutor works more than 6h in any single day.</td></tr>
+        <tr><td>11. Tutor availability</td><td>Tutors only work in their declared weekly windows.</td></tr>
+        <tr><td>12. Back-to-back break</td><td>15-minute break between consecutive sessions for the same tutor.</td></tr>
+        <tr><td>13. Travel time</td><td>Tutors need extra time to move between buildings.</td></tr>
+        <tr><td>14. Class conflicts</td><td>Students can't be in a session during their own classes.</td></tr>
+        <tr><td>15. No double-booking</td><td>Students or tutors can't be in two places at once.</td></tr>
+        <tr><td>16. Room exclusivity</td><td>Same room can't host two sessions at the same time.</td></tr>
+        <tr><td>17. <b>External room blocks</b></td><td>Rooms are sometimes booked by other departments — those times are off-limits.</td></tr>
+        <tr><td>18. Equipment</td><td>Some topics need a lab; the room must have it.</td></tr>
+        <tr><td>19. Zoom license cap</td><td>Fixed number of online platforms; no more than that many online sessions at once.</td></tr>
+        <tr><td>20. Budget on paid hours</td><td>Total paid hourly tutor hours ≤ the semester budget.</td></tr>
+        <tr><td>21. Preference-only</td><td>Student must have listed the session.</td></tr>
+      </table>
+      <h3>Soft goals (the quality score)</h3>
+      <ul>
+        <li>Place as many students as possible, especially priority ones, in their top preferences</li>
+        <li><b>Continuity</b> across weeks (same tutor for same topic)</li>
+        <li><b>Anti-favoritism</b> (no one tutor monopolizing one student)</li>
+        <li><b>Curricular order</b> (prerequisite topics first)</li>
+        <li>Tutor load balance</li>
+        <li>Tutor travel time</li>
+        <li>Student wait time (gap between submission and session)</li>
+      </ul>
+      <h3>Dynamic events</h3>
+      <ul>
+        <li><b>Drops:</b> ~5% of students permanently drop their course in weeks 1–2 (the add/drop period).</li>
+        <li><b>Tutor sickness:</b> a random tutor or two falls ill each week; their schedule for that week is cancelled.</li>
+        <li><b>No-shows:</b> students have a per-person no-show probability; the planner <b>preemptively overbooks</b> high-no-show slots.</li>
+        <li><b>New requests:</b> requests can arrive after the weekly schedule is built — the planner places them on the fly.</li>
+        <li><b>Cancellations:</b> a freed seat is offered to the highest-priority waiter.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<!-- Onboarding -->
+<div id="onboarding" class="onboarding">
+  <div class="onboarding-card">
+    <h2>👋 Welcome</h2>
+    <p>You're watching a tutoring center plan its semester. The planner respects <strong>20 hard rules</strong>, optimizes <strong>7 soft goals</strong>, and copes with the messy stuff that happens during a real term.</p>
+    <div class="ob-grid">
+      <div><strong>Weekly schedule</strong> in the big Gantt</div>
+      <div><strong>Click a week</strong> in the strip to jump to it</div>
+      <div><strong>Yellow outline</strong> = overbooked slot</div>
+      <div><strong>★ on a student</strong> = same tutor as last week</div>
+      <div><strong>Red stripes</strong> = sick tutor</div>
+      <div><strong>Gray stripes</strong> = room is in use by another dept</div>
+    </div>
+    <p>Hover anything for details. Use the buttons at the bottom-right (<em>Step 3</em>) to simulate disruptions — sickness, drops, no-shows, new requests.</p>
+    <div class="ob-actions">
+      <button id="obSkip" class="btn btn-ghost">Skip</button>
+      <button id="obStart" class="btn btn-primary">Got it · let me watch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =================================================================
+   MODEL — every concept from the problem statement
+   ================================================================= */
+
+const COHORT = { REGULAR: 0, SUPPORT: 1, ATHLETE: 2 };
+const COHORT_NAME  = ["Regular", "Extra support", "Athlete"];
+const COHORT_CLASS = ["regular", "support", "athlete"];
+
+const POOL = { UG: 0, GRAD: 1, PAID: 2 };
+const POOL_NAME = ["Undergrad", "Graduate", "Paid hourly"];
+
+const LANG = { EN: 0, AR: 1, BI: 2 };
+const LANG_NAME = ["English", "Arabic", "Bilingual"];
+const LANG_CLASS = ["lang-en", "lang-ar", "lang-bi"];
+
+const MODALITY = { ONLINE: 0, IN_PERSON: 1, EITHER: 2 };
+const MODALITY_NAME = ["Online", "In person", "Either"];
+
+const EQUIPMENT = { NONE: 0, LAB: 2 };
+const EQUIP_ICON = { 0: "", 2: "🧪" };
+
+const TOPICS = ["Calculus", "Algorithms", "Physics", "Circuits", "Linear Algebra", "Discrete Math"];
+const TOPIC_PREREQ = { 1: 5, 4: 0, 3: 2 };
+const TOPIC_EQUIP = { 3: EQUIPMENT.LAB };  // only Circuits needs lab
+
+const REASON = {
+  EMPTY_PREFS:   "had no acceptable sessions on their list",
+  TOPIC:         "no tutor qualified for that topic with room",
+  POOL:          "no tutor in the right pool (UG / Grad / Paid) with a seat",
+  LANG:          "no language-matching tutor with a free seat",
+  MODAL:         "format didn't match any free session",
+  ACCESS:        "needed an accessible room and none was free",
+  CAPTION:       "needed live captioning and no captioning-capable room was free",
+  EXTRA_TIME:    "needed extra time and no 75-min session was free",
+  GROUP:         "wants 1-on-1 only and matching slots are full",
+  CLASS:         "all matching slots overlap their class schedule",
+  TUTOR_WK:      "qualified tutors all hit their weekly hour cap",
+  TUTOR_DAY:     "qualified tutors all hit their 6h daily cap",
+  TUTOR_BREAK:   "no 15-min back-to-back gap free with a qualified tutor",
+  TUTOR_TRAVEL:  "no travel-time window free between rooms",
+  TUTOR_SICK:    "the qualified tutor was sick this week",
+  EQUIPMENT:     "needed lab equipment that wasn't free",
+  ROOM_USED:     "every suitable room is busy at the only matching times",
+  EXTERNAL:      "matching rooms are booked by another department at those times",
+  ZOOM:          "online platform license cap was reached",
+  STU_OVERLAP:   "would overlap one of their own tutoring sessions",
+  BUDGET:        "would exceed the paid-tutoring budget",
+  DROPPED:       "this student dropped the course",
+  CAPACITY:      "all preferred slots are full; higher-priority students won them",
+  UNKNOWN:       "no preference worked for unclear reasons",
+};
+
+const TUTOR_NAMES = ["Maya","Omar","Layla","Hassan","Salma","Yousef","Nour","Karim",
+  "Farida","Tarek","Amira","Ziad","Hana","Adel","Dina","Sherif","Aya","Hossam",
+  "Jana","Rami","Sara","Kamal","Reem","Nabil","Mira","Faris","Lina","Marwan","Hala","Ahmed"];
+
+const DAY_MIN = 24 * 60;
+const DAYS = 5;
+const VIS_START = 8 * 60;
+const VIS_END = 18 * 60;
+const VIS_SPAN = VIS_END - VIS_START;
+const SLOT_LEN_DEFAULT = 60;
+const EXTRA_TIME_BONUS = 15;       // extra-time students need 15 extra minutes
+const BREAK_MIN = 15;
+const DAILY_CAP_MIN = 6 * 60;
+const TRAVEL_MIN_DIFF_ROOM = 10;
+const ZOOM_LICENSES = 10;
+const PAID_BUDGET_HOURS_PER_WEEK = 60;
+const SICK_RATE_PER_WEEK = 0.06;
+const DROP_RATE_WEEK_1_2 = 0.05;
+const CONTINUITY_BONUS = 0.45;
+
+function rng32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const ri = (r, lo, hi) => Math.floor(r() * (hi - lo + 1)) + lo;
+const pick = (r, a) => a[Math.floor(r() * a.length)];
+const bern = (r, p) => r() < p;
+function shuf(r, a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function overlaps(a1, a2, b1, b2) { return a1 < b2 && b1 < a2; }
+function langMatch(stu, slot) { if (slot === LANG.BI) return true; if (stu === LANG.BI) return true; return stu === slot; }
+function modalityMatch(stuPref, slotMod) { if (stuPref === MODALITY.EITHER) return true; return stuPref === slotMod; }
+
+/* =================================================================
+   GENERATOR
+   ================================================================= */
+function generateInstance(opts) {
+  const r = rng32(opts.seed);
+  const inst = {
+    tutors: [], rooms: [], slots: [], students: [], requests: [],
+    numWeeks: opts.numWeeks,
+  };
+
+  const numUG = Math.max(2, Math.round(opts.numTutors * 0.45));
+  const numGRAD = Math.max(2, Math.round(opts.numTutors * 0.35));
+  const numPAID = Math.max(1, opts.numTutors - numUG - numGRAD);
+  function tutorLang(i) {
+    const u = i / opts.numTutors;
+    if (u < 0.50) return LANG.BI;
+    if (u < 0.70) return LANG.AR;
+    return LANG.EN;
+  }
+  let tid = 0;
+  const buildTutor = (pool) => {
+    const lang = tutorLang(tid);
+    const topics = new Set();
+    topics.add(tid % TOPICS.length);
+    topics.add((tid + 1) % TOPICS.length);
+    while (topics.size < 3 + (tid % 2)) topics.add(ri(r, 0, TOPICS.length - 1));
+    const weeklyCapMin = pool === POOL.UG ? 10 * 60 : pool === POOL.GRAD ? 20 * 60 : 12 * 60;
+    return {
+      id: tid++,
+      name: TUTOR_NAMES[tid % TUTOR_NAMES.length],
+      pool,
+      topics: [...topics],
+      language: lang,
+      weeklyCapMin,
+      dailyCapMin: DAILY_CAP_MIN,
+      avail: Array.from({length: DAYS}, (_, d) => ({
+        start: d * DAY_MIN + VIS_START + ri(r, 0, 90),
+        end:   d * DAY_MIN + VIS_START + ri(r, 360, VIS_SPAN),
+      })),
+    };
+  };
+  for (let i = 0; i < numUG; i++)   inst.tutors.push(buildTutor(POOL.UG));
+  for (let i = 0; i < numGRAD; i++) inst.tutors.push(buildTutor(POOL.GRAD));
+  for (let i = 0; i < numPAID; i++) inst.tutors.push(buildTutor(POOL.PAID));
+
+  /* Rooms — modality + equipment + accessibility + captioning + external blocks */
+  const onlineRooms = Math.max(2, Math.round(opts.numRooms * 0.30));
+  for (let i = 0; i < opts.numRooms; i++) {
+    const isOnline = i < onlineRooms;
+    const externalBlocks = [];
+    if (!isOnline) {
+      // 0-3 external blocks per room across the week
+      const n = ri(r, 0, 3);
+      for (let b = 0; b < n; b++) {
+        const d = ri(r, 0, DAYS - 1);
+        const start = d * DAY_MIN + VIS_START + ri(r, 0, VIS_SPAN - 120);
+        externalBlocks.push({ start, end: start + ri(r, 60, 120) });
+      }
+    }
+    inst.rooms.push({
+      id: i,
+      name: isOnline ? `Online ${i + 1}` : `Room ${100 + i}`,
+      modality: isOnline ? MODALITY.ONLINE : MODALITY.IN_PERSON,
+      capacity: bern(r, 0.30) ? 3 : 1,
+      accessible: isOnline ? true : bern(r, 0.65),
+      captioning: isOnline ? bern(r, 0.50) : false, // ~half of online rooms have live captioning
+      equipment: isOnline ? EQUIPMENT.NONE : (bern(r, 0.20) ? EQUIPMENT.LAB : EQUIPMENT.NONE),
+      building: isOnline ? 0 : (1 + (i % 3)),
+      externalBlocks,
+    });
+  }
+
+  /* Slots — properly spaced, room-exclusive, equipment-compatible */
+  let sid = 0;
+  for (const t of inst.tutors) {
+    const targetSlots = Math.min(14, Math.floor(t.weeklyCapMin / 60));
+    const dayBookings = new Map();
+    for (let d = 0; d < DAYS; d++) dayBookings.set(d, []);
+    let placedSlots = 0;
+    let tries = 0;
+    while (placedSlots < targetSlots && tries < 100) {
+      tries++;
+      const av = pick(r, t.avail);
+      const span = av.end - av.start;
+      if (span < SLOT_LEN_DEFAULT) continue;
+      const off = ri(r, 0, span - SLOT_LEN_DEFAULT);
+      const start = av.start + off;
+      const end = start + SLOT_LEN_DEFAULT;
+      const dayIdx = Math.floor(start / DAY_MIN);
+
+      if (dayBookings.get(dayIdx).length * SLOT_LEN_DEFAULT >= t.dailyCapMin) continue;
+
+      let conflict = false;
+      for (const b of dayBookings.get(dayIdx)) {
+        if (start < b.end && b.start < end) { conflict = true; break; }
+        if (start >= b.end && start - b.end < BREAK_MIN) { conflict = true; break; }
+        if (b.start >= end && b.start - end < BREAK_MIN) { conflict = true; break; }
+      }
+      if (conflict) continue;
+
+      // Find a room (a) topic-compatible, (b) not externally blocked, (c) not booked
+      let room = null, validTopics = [];
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const wantOnline = bern(r, 0.30);
+        const pool = inst.rooms.filter(rm => wantOnline ? rm.modality === MODALITY.ONLINE : rm.modality === MODALITY.IN_PERSON);
+        const rm = pool.length ? pick(r, pool) : inst.rooms[0];
+        const vt = t.topics.filter(tp => {
+          const need = TOPIC_EQUIP[tp] || EQUIPMENT.NONE;
+          return need === EQUIPMENT.NONE || rm.equipment === need;
+        });
+        if (vt.length === 0) continue;
+        const roomBusy = inst.slots.some(s => s.room === rm.id && s.start < end && start < s.end);
+        if (roomBusy) continue;
+        const externalBusy = (rm.externalBlocks || []).some(b => start < b.end && b.start < end);
+        if (externalBusy) continue;
+        room = rm; validTopics = vt; break;
+      }
+      if (!room) continue;
+      const topic = pick(r, validTopics);
+
+      inst.slots.push({
+        id: sid++,
+        tutor: t.id,
+        room: room.id,
+        topic,
+        language: t.language,
+        modality: room.modality,
+        pool: t.pool,
+        start,
+        end,
+        capacity: Math.min(room.capacity, bern(r, 0.20) ? 2 : 1),
+        equipmentNeeded: TOPIC_EQUIP[topic] || EQUIPMENT.NONE,
+        overbookBonus: 0, // assigned later in Phase 1.5
+      });
+      dayBookings.get(dayIdx).push({ start, end });
+      placedSlots++;
+    }
+  }
+
+  /* Students */
+  let rid = 0;
+  for (let i = 0; i < opts.numStudents; i++) {
+    const u = r();
+    let cohort = COHORT.REGULAR;
+    if (u < opts.priorityRate * 0.55) cohort = COHORT.SUPPORT;
+    else if (u < opts.priorityRate) cohort = COHORT.ATHLETE;
+
+    const poolU = r();
+    const pool = poolU < 0.45 ? POOL.UG : (poolU < 0.80 ? POOL.GRAD : POOL.PAID);
+    let modalityPref;
+    const mu = r();
+    if (mu < opts.onlineRate) modalityPref = MODALITY.ONLINE;
+    else if (mu < opts.onlineRate + 0.50) modalityPref = MODALITY.IN_PERSON;
+    else modalityPref = MODALITY.EITHER;
+    let languagePref;
+    const lu = r();
+    if (lu < opts.bilingualRate) languagePref = LANG.BI;
+    else if (lu < opts.bilingualRate + opts.arabicRate) languagePref = LANG.AR;
+    else languagePref = LANG.EN;
+    const needsAccess = bern(r, opts.accessibilityRate);
+    const needsCaption = bern(r, opts.captioningRate);
+    const needsExtraTime = bern(r, opts.extraTimeRate);
+    const maxGroupSize = bern(r, 0.20) ? 3 : 1;
+    const noShowProb = Math.min(0.55, Math.max(0, r() * 0.4)); // 0-40% no-show probability
+
+    const classes = [];
+    const classCount = bern(r, opts.conflictRate) ? ri(r, 1, 3) : (bern(r, 0.4) ? 1 : 0);
+    for (let c = 0; c < classCount; c++) {
+      const d = ri(r, 0, DAYS - 1);
+      const start = d * DAY_MIN + VIS_START + ri(r, 0, VIS_SPAN - 90);
+      classes.push({ start, end: start + 60 });
+    }
+
+    const student = {
+      id: i, name: "Student " + (i + 1),
+      cohort, pool, modalityPref, languagePref,
+      needsAccess, needsCaption, needsExtraTime,
+      maxGroupSize, noShowProb,
+      classSchedule: classes,
+      requests: [],
+      dropped: false,
+      dropWeek: null,
+    };
+
+    const matchesFor = (topic, modPref, langPref) =>
+      inst.slots.filter(s =>
+        s.topic === topic && s.pool === pool &&
+        (s.language === LANG.BI || langPref === LANG.BI || s.language === langPref) &&
+        (modPref === MODALITY.EITHER || s.modality === modPref) &&
+        s.capacity <= maxGroupSize &&
+        (!needsAccess || inst.rooms[s.room].accessible) &&
+        (!needsCaption || inst.rooms[s.room].captioning)
+      );
+
+    const nReq = bern(r, 0.70) ? 1 : (bern(r, 0.75) ? 2 : 3);
+    const usedTopics = new Set();
+
+    for (let q = 0; q < nReq; q++) {
+      let topic = -1, cand = [];
+      let modPref = student.modalityPref, langPref = student.languagePref;
+      const topicShuffle = shuf(r, [0, 1, 2, 3, 4, 5]);
+      outer: for (const t of topicShuffle) {
+        if (usedTopics.has(t)) continue;
+        for (const relaxStep of [0, 1, 2]) {
+          const tryMod = relaxStep >= 1 ? MODALITY.EITHER : modPref;
+          const tryLang = relaxStep >= 2 ? LANG.BI : langPref;
+          const slots = matchesFor(t, tryMod, tryLang);
+          if (slots.length >= 2) {
+            topic = t; cand = slots.map(s => s.id);
+            modPref = tryMod; langPref = tryLang;
+            break outer;
+          }
+        }
+      }
+      if (topic === -1) continue;
+      usedTopics.add(topic);
+      student.modalityPref = modPref;
+      student.languagePref = langPref;
+      shuf(r, cand);
+      const len = Math.min(cand.length, ri(r, 3, 10));
+      const prefs = cand.slice(0, len);
+      const req = { id: rid++, student: i, topic, prefs, submittedAt: ri(r, 0, 9999) };
+      student.requests.push(req.id);
+      inst.requests.push(req);
+    }
+    inst.students.push(student);
+  }
+
+  return inst;
+}
+
+/* =================================================================
+   FEASIBILITY
+   ================================================================= */
+function feasible(req, slot, room, tutor, student, state, inst, weekCtx) {
+  if (student.dropped) return REASON.DROPPED;
+  if (weekCtx && weekCtx.sickTutors.has(tutor.id)) return REASON.TUTOR_SICK;
+  if (slot.pool !== student.pool) return REASON.POOL;
+  if (slot.topic !== req.topic) return REASON.TOPIC;
+  if (!tutor.topics.includes(req.topic)) return REASON.TOPIC;
+  if (!langMatch(student.languagePref, slot.language)) return REASON.LANG;
+  if (!modalityMatch(student.modalityPref, slot.modality)) return REASON.MODAL;
+  if (room.modality !== slot.modality) return REASON.MODAL;
+  if (student.needsAccess && !room.accessible) return REASON.ACCESS;
+  if (student.needsCaption && !room.captioning) return REASON.CAPTION;
+  if (room.capacity < slot.capacity) return REASON.CAPACITY;
+  if (slot.capacity > student.maxGroupSize) return REASON.GROUP;
+  const slotEquip = slot.equipmentNeeded || EQUIPMENT.NONE;
+  if (slotEquip !== EQUIPMENT.NONE && room.equipment !== slotEquip) return REASON.EQUIPMENT;
+
+  const effEnd = slot.end + (student.needsExtraTime ? EXTRA_TIME_BONUS : 0);
+
+  let inAvail = false;
+  for (const w of tutor.avail) if (slot.start >= w.start && effEnd <= w.end) { inAvail = true; break; }
+  if (!inAvail) return REASON.UNKNOWN;
+
+  // External room blocks
+  for (const b of (room.externalBlocks || [])) {
+    if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.EXTERNAL;
+  }
+
+  for (const w of student.classSchedule) if (overlaps(slot.start, effEnd, w.start, w.end)) return REASON.CLASS;
+
+  // overbooking: effective cap = slot.capacity + slot.overbookBonus
+  const effCap = slot.capacity + (slot.overbookBonus || 0);
+  if (state.capLeft[slot.id] <= 0 && state.capLeft[slot.id] + slot.overbookBonus <= 0) return REASON.CAPACITY;
+  if (state.capLeft[slot.id] <= 0) return REASON.CAPACITY;
+
+  if (state.tutorMinLeft[tutor.id] < effEnd - slot.start) return REASON.TUTOR_WK;
+
+  const dayIdx = Math.floor(slot.start / DAY_MIN);
+  const dayKey = tutor.id + ":" + dayIdx;
+  if ((state.tutorDayMin[dayKey] || 0) + (effEnd - slot.start) > tutor.dailyCapMin) return REASON.TUTOR_DAY;
+
+  const tBookings = state.tutorBookings.get(tutor.id) || [];
+  for (const b of tBookings) {
+    if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.UNKNOWN;
+    if (slot.start >= b.end) {
+      const needed = BREAK_MIN + (b.room !== slot.room && b.modality !== MODALITY.ONLINE && slot.modality !== MODALITY.ONLINE && b.building !== room.building ? TRAVEL_MIN_DIFF_ROOM : 0);
+      if (slot.start - b.end < needed) return slot.start - b.end < BREAK_MIN ? REASON.TUTOR_BREAK : REASON.TUTOR_TRAVEL;
+    } else if (b.start >= effEnd) {
+      const needed = BREAK_MIN + (b.room !== slot.room && b.modality !== MODALITY.ONLINE && slot.modality !== MODALITY.ONLINE && b.building !== room.building ? TRAVEL_MIN_DIFF_ROOM : 0);
+      if (b.start - effEnd < needed) return b.start - effEnd < BREAK_MIN ? REASON.TUTOR_BREAK : REASON.TUTOR_TRAVEL;
+    }
+  }
+
+  const rBookings = state.roomBookings.get(room.id) || [];
+  for (const b of rBookings) {
+    if (b.slotId !== slot.id && overlaps(slot.start, effEnd, b.start, b.end)) return REASON.ROOM_USED;
+  }
+
+  if (slot.modality === MODALITY.ONLINE) {
+    let concurrent = 0;
+    for (const s of inst.slots) {
+      if (s.modality !== MODALITY.ONLINE) continue;
+      if (!overlaps(slot.start, effEnd, s.start, s.end)) continue;
+      if (state.capLeft[s.id] < (s.capacity + (s.overbookBonus || 0))) concurrent++;
+    }
+    if (concurrent >= ZOOM_LICENSES && state.capLeft[slot.id] === slot.capacity + (slot.overbookBonus || 0)) return REASON.ZOOM;
+  }
+
+  const sb = state.studentBusy.get(student.id);
+  if (sb) for (const b of sb) if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.STU_OVERLAP;
+
+  if (tutor.pool === POOL.PAID && state.paidMinLeft < effEnd - slot.start) return REASON.BUDGET;
+  if (state.assignReq.has(req.id)) return REASON.UNKNOWN;
+  return null;
+}
+
+function isFeasible(req, slot, inst, state, weekCtx) {
+  const stu = inst.students[req.student];
+  return feasible(req, slot, inst.rooms[slot.room], inst.tutors[slot.tutor], stu, state, inst, weekCtx) === null;
+}
+
+function makeState(inst) {
+  const capLeft = {};
+  for (const s of inst.slots) capLeft[s.id] = s.capacity + (s.overbookBonus || 0);
+  const tutorMinLeft = {};
+  for (const t of inst.tutors) tutorMinLeft[t.id] = t.weeklyCapMin;
+  return {
+    capLeft, tutorMinLeft,
+    tutorDayMin: {},
+    paidMinLeft: PAID_BUDGET_HOURS_PER_WEEK * 60,
+    assignReq: new Map(),
+    slotHold: new Map(inst.slots.map(s => [s.id, []])),
+    studentBusy: new Map(),
+    tutorBookings: new Map(),
+    roomBookings: new Map(),
+  };
+}
+function applyAssign(state, req, slot, inst) {
+  const stu = inst.students[req.student];
+  const tutor = inst.tutors[slot.tutor];
+  const room = inst.rooms[slot.room];
+  const effEnd = slot.end + (stu.needsExtraTime ? EXTRA_TIME_BONUS : 0);
+  state.capLeft[slot.id]--;
+  state.tutorMinLeft[tutor.id] -= (effEnd - slot.start);
+  const dayIdx = Math.floor(slot.start / DAY_MIN);
+  const dayKey = tutor.id + ":" + dayIdx;
+  state.tutorDayMin[dayKey] = (state.tutorDayMin[dayKey] || 0) + (effEnd - slot.start);
+  if (tutor.pool === POOL.PAID) state.paidMinLeft -= effEnd - slot.start;
+  state.assignReq.set(req.id, slot.id);
+  state.slotHold.get(slot.id).push(req.id);
+  if (!state.studentBusy.has(req.student)) state.studentBusy.set(req.student, []);
+  state.studentBusy.get(req.student).push({ start: slot.start, end: effEnd, slot: slot.id });
+  if (!state.tutorBookings.has(tutor.id)) state.tutorBookings.set(tutor.id, []);
+  state.tutorBookings.get(tutor.id).push({
+    start: slot.start, end: effEnd, room: room.id, building: room.building,
+    modality: slot.modality, slotId: slot.id, reqId: req.id,
+  });
+  if (!state.roomBookings.has(room.id)) state.roomBookings.set(room.id, []);
+  state.roomBookings.get(room.id).push({ start: slot.start, end: effEnd, slotId: slot.id });
+}
+function applyUnassign(state, req, slot, inst) {
+  const stu = inst.students[req.student];
+  const tutor = inst.tutors[slot.tutor];
+  const room = inst.rooms[slot.room];
+  const effEnd = slot.end + (stu.needsExtraTime ? EXTRA_TIME_BONUS : 0);
+  state.capLeft[slot.id]++;
+  state.tutorMinLeft[tutor.id] += (effEnd - slot.start);
+  const dayIdx = Math.floor(slot.start / DAY_MIN);
+  const dayKey = tutor.id + ":" + dayIdx;
+  state.tutorDayMin[dayKey] = (state.tutorDayMin[dayKey] || 0) - (effEnd - slot.start);
+  if (tutor.pool === POOL.PAID) state.paidMinLeft += effEnd - slot.start;
+  state.assignReq.delete(req.id);
+  const arr = state.slotHold.get(slot.id);
+  const i = arr.indexOf(req.id); if (i >= 0) arr.splice(i, 1);
+  const sb = state.studentBusy.get(req.student) || [];
+  const j = sb.findIndex(x => x.slot === slot.id);
+  if (j >= 0) sb.splice(j, 1);
+  const tb = state.tutorBookings.get(tutor.id) || [];
+  const k = tb.findIndex(x => x.slotId === slot.id && x.reqId === req.id);
+  if (k >= 0) tb.splice(k, 1);
+  const rb = state.roomBookings.get(room.id) || [];
+  const m = rb.findIndex(x => x.slotId === slot.id);
+  if (m >= 0) rb.splice(m, 1);
+}
+function snap(state) { return new Map(state.assignReq); }
+
+function cohortWeight(c) { return c === COHORT.REGULAR ? 1 : 2; }
+function rankWeight(k) { return 1 / (1 + k); }
+
+function score(state, inst, weekCtx) {
+  let s = 0;
+  const studentTutors = new Map();
+  for (const [reqId, slotId] of state.assignReq) {
+    const req = inst.requests[reqId];
+    const stu = inst.students[req.student];
+    const k = req.prefs.indexOf(slotId);
+    if (k < 0) continue;
+    s += cohortWeight(stu.cohort) * rankWeight(k);
+    // continuity bonus from prior weeks
+    if (weekCtx && weekCtx.continuity) {
+      const tid = inst.slots[slotId].tutor;
+      const prevTid = weekCtx.continuity.get(`${req.student}:${req.topic}`);
+      if (prevTid === tid) s += CONTINUITY_BONUS;
+    }
+    if (!studentTutors.has(req.student)) studentTutors.set(req.student, new Map());
+    const tm = studentTutors.get(req.student);
+    const tid = inst.slots[slotId].tutor;
+    tm.set(tid, (tm.get(tid) || 0) + 1);
+  }
+  // within-week continuity bonus
+  for (const tm of studentTutors.values()) {
+    for (const count of tm.values()) if (count > 1) s += 0.3 * (count - 1);
+  }
+  // anti-favoritism
+  for (const tm of studentTutors.values()) {
+    const total = [...tm.values()].reduce((a, b) => a + b, 0);
+    for (const count of tm.values()) if (count >= total && total >= 3) s -= 0.2;
+  }
+  // tutor load variance
+  const tutorLoad = {};
+  for (const [, slotId] of state.assignReq) {
+    const t = inst.slots[slotId].tutor;
+    const slot = inst.slots[slotId];
+    tutorLoad[t] = (tutorLoad[t] || 0) + (slot.end - slot.start);
+  }
+  const loads = Object.values(tutorLoad);
+  if (loads.length) {
+    const mean = loads.reduce((a, b) => a + b, 0) / loads.length;
+    let v = 0; for (const x of loads) v += (x - mean) * (x - mean);
+    s -= 0.0001 * v;
+  }
+  // wait time penalty
+  for (const [reqId, slotId] of state.assignReq) {
+    const req = inst.requests[reqId];
+    const slot = inst.slots[slotId];
+    const wait = Math.max(0, slot.start - req.submittedAt);
+    s -= 1e-6 * wait;
+  }
+  // prereq order
+  for (const stu of inst.students) {
+    if (stu.dropped) continue;
+    const myReqs = stu.requests.map(id => inst.requests[id]).filter(r => state.assignReq.has(r.id));
+    for (const r1 of myReqs) {
+      const prereq = TOPIC_PREREQ[r1.topic];
+      if (prereq === undefined) continue;
+      const prevReq = myReqs.find(r => r.topic === prereq);
+      if (prevReq && inst.slots[state.assignReq.get(prevReq.id)].start < inst.slots[state.assignReq.get(r1.id)].start) s += 0.15;
+    }
+  }
+  return s;
+}
+
+function priority(req, stu, k, weekCtx, slot, inst) {
+  let p = cohortWeight(stu.cohort) * (k >= 0 ? rankWeight(k) : 0)
+        - req.submittedAt * 1e-7
+        - req.id * 1e-10;
+  // bonus for continuity (same tutor as last week)
+  if (weekCtx && weekCtx.continuity) {
+    const prevTid = weekCtx.continuity.get(`${req.student}:${req.topic}`);
+    if (slot && prevTid === slot.tutor) p += CONTINUITY_BONUS;
+  }
+  return p;
+}
+
+/* =================================================================
+   PHASE 1 — Deferred acceptance with all 20+ constraints
+   ================================================================= */
+function runPhase1(inst, state, events, weekCtx) {
+  // Build pool of active (non-dropped) requests
+  const active = inst.requests.filter(r => !inst.students[r.student].dropped);
+  const next = new Map(active.map(rq => [rq.id, 0]));
+  let safety = 0;
+  while (safety++ < active.length * 30) {
+    let any = false;
+    for (const req of active) {
+      if (state.assignReq.has(req.id)) continue;
+      while (next.get(req.id) < req.prefs.length) {
+        const k = next.get(req.id);
+        const sid = req.prefs[k];
+        next.set(req.id, k + 1);
+        const slot = inst.slots[sid]; if (!slot) continue;
+        const stu = inst.students[req.student];
+        const tutor = inst.tutors[slot.tutor];
+        const room = inst.rooms[slot.room];
+
+        // Quick structural check (excluding capacity which we'll handle via displacement)
+        const why = (function () {
+          if (weekCtx.sickTutors.has(tutor.id)) return REASON.TUTOR_SICK;
+          if (slot.pool !== stu.pool) return REASON.POOL;
+          if (slot.topic !== req.topic) return REASON.TOPIC;
+          if (!tutor.topics.includes(req.topic)) return REASON.TOPIC;
+          if (!langMatch(stu.languagePref, slot.language)) return REASON.LANG;
+          if (!modalityMatch(stu.modalityPref, slot.modality)) return REASON.MODAL;
+          if (room.modality !== slot.modality) return REASON.MODAL;
+          if (stu.needsAccess && !room.accessible) return REASON.ACCESS;
+          if (stu.needsCaption && !room.captioning) return REASON.CAPTION;
+          if (slot.capacity > stu.maxGroupSize) return REASON.GROUP;
+          const slotEquip = slot.equipmentNeeded || EQUIPMENT.NONE;
+          if (slotEquip !== EQUIPMENT.NONE && room.equipment !== slotEquip) return REASON.EQUIPMENT;
+          const effEnd = slot.end + (stu.needsExtraTime ? EXTRA_TIME_BONUS : 0);
+          let inAvail = false;
+          for (const w of tutor.avail) if (slot.start >= w.start && effEnd <= w.end) { inAvail = true; break; }
+          if (!inAvail) return REASON.UNKNOWN;
+          for (const b of (room.externalBlocks || [])) if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.EXTERNAL;
+          for (const w of stu.classSchedule) if (overlaps(slot.start, effEnd, w.start, w.end)) return REASON.CLASS;
+          if (state.tutorMinLeft[tutor.id] < effEnd - slot.start) return REASON.TUTOR_WK;
+          const dayIdx = Math.floor(slot.start / DAY_MIN);
+          const dayKey = tutor.id + ":" + dayIdx;
+          if ((state.tutorDayMin[dayKey] || 0) + (effEnd - slot.start) > tutor.dailyCapMin) return REASON.TUTOR_DAY;
+          const tBookings = state.tutorBookings.get(tutor.id) || [];
+          for (const b of tBookings) {
+            if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.UNKNOWN;
+            if (slot.start >= b.end) {
+              const needed = BREAK_MIN + (b.room !== slot.room && b.modality !== MODALITY.ONLINE && slot.modality !== MODALITY.ONLINE && b.building !== room.building ? TRAVEL_MIN_DIFF_ROOM : 0);
+              if (slot.start - b.end < needed) return REASON.TUTOR_BREAK;
+            } else if (b.start >= effEnd) {
+              const needed = BREAK_MIN + (b.room !== slot.room && b.modality !== MODALITY.ONLINE && slot.modality !== MODALITY.ONLINE && b.building !== room.building ? TRAVEL_MIN_DIFF_ROOM : 0);
+              if (b.start - effEnd < needed) return REASON.TUTOR_BREAK;
+            }
+          }
+          const rBookings = state.roomBookings.get(room.id) || [];
+          for (const b of rBookings) {
+            if (b.slotId !== slot.id && overlaps(slot.start, effEnd, b.start, b.end)) return REASON.ROOM_USED;
+          }
+          if (slot.modality === MODALITY.ONLINE) {
+            let concurrent = 0;
+            for (const s2 of inst.slots) {
+              if (s2.modality !== MODALITY.ONLINE) continue;
+              if (!overlaps(slot.start, effEnd, s2.start, s2.end)) continue;
+              if (state.capLeft[s2.id] < (s2.capacity + (s2.overbookBonus || 0))) concurrent++;
+            }
+            if (concurrent >= ZOOM_LICENSES && state.capLeft[slot.id] === slot.capacity + (slot.overbookBonus || 0)) return REASON.ZOOM;
+          }
+          const sb = state.studentBusy.get(stu.id);
+          if (sb) for (const b of sb) if (overlaps(slot.start, effEnd, b.start, b.end)) return REASON.STU_OVERLAP;
+          if (tutor.pool === POOL.PAID && state.paidMinLeft < effEnd - slot.start) return REASON.BUDGET;
+          return null;
+        })();
+        if (why !== null) continue;
+
+        if (state.capLeft[sid] > 0) {
+          applyAssign(state, req, slot, inst);
+          events.push({ kind: "place", req: req.id, slot: sid });
+          any = true; break;
+        }
+        const hold = state.slotHold.get(sid);
+        if (!hold || hold.length === 0) continue;
+        const myP = priority(req, stu, k, weekCtx, slot, inst);
+        let worst = hold[0];
+        let worstP = priority(
+          inst.requests[worst],
+          inst.students[inst.requests[worst].student],
+          inst.requests[worst].prefs.indexOf(sid),
+          weekCtx, slot, inst
+        );
+        for (let i = 1; i < hold.length; i++) {
+          const oReq = inst.requests[hold[i]];
+          const oStu = inst.students[oReq.student];
+          const op = priority(oReq, oStu, oReq.prefs.indexOf(sid), weekCtx, slot, inst);
+          if (op < worstP) { worstP = op; worst = hold[i]; }
+        }
+        if (myP > worstP) {
+          applyUnassign(state, inst.requests[worst], slot, inst);
+          applyAssign(state, req, slot, inst);
+          events.push({ kind: "displace", req: req.id, slot: sid, victim: worst });
+          any = true; break;
+        }
+      }
+    }
+    if (!any) break;
+  }
+}
+
+/* =================================================================
+   PHASE 2 — ALNS
+   ================================================================= */
+function destroyRandom(state, inst, k, r) {
+  const ids = shuf(r, [...state.assignReq.keys()]);
+  const out = [];
+  for (let i = 0; i < Math.min(k, ids.length); i++) {
+    const sid = state.assignReq.get(ids[i]);
+    applyUnassign(state, inst.requests[ids[i]], inst.slots[sid], inst);
+    out.push({ req: ids[i], slot: sid });
+  }
+  return out;
+}
+function destroyWorstRank(state, inst, k) {
+  const arr = [];
+  for (const [rqId, slotId] of state.assignReq) {
+    const req = inst.requests[rqId];
+    arr.push([req.prefs.indexOf(slotId), rqId, slotId]);
+  }
+  arr.sort((a, b) => b[0] - a[0]);
+  const out = [];
+  for (let i = 0; i < Math.min(k, arr.length); i++) {
+    const [, rqId, slotId] = arr[i];
+    applyUnassign(state, inst.requests[rqId], inst.slots[slotId], inst);
+    out.push({ req: rqId, slot: slotId });
+  }
+  return out;
+}
+function destroyTutorOverload(state, inst, k, r) {
+  const load = {};
+  for (const [, slotId] of state.assignReq) {
+    const sl = inst.slots[slotId];
+    load[sl.tutor] = (load[sl.tutor] || 0) + (sl.end - sl.start);
+  }
+  if (Object.keys(load).length === 0) return [];
+  let worst = -1, mx = -1;
+  for (const [t, v] of Object.entries(load)) if (v > mx) { mx = v; worst = +t; }
+  const cand = [];
+  for (const [rqId, slotId] of state.assignReq) if (inst.slots[slotId].tutor === worst) cand.push(rqId);
+  shuf(r, cand);
+  const out = [];
+  for (let i = 0; i < Math.min(k, cand.length); i++) {
+    const slotId = state.assignReq.get(cand[i]);
+    applyUnassign(state, inst.requests[cand[i]], inst.slots[slotId], inst);
+    out.push({ req: cand[i], slot: slotId });
+  }
+  return out;
+}
+function repairGreedy(state, inst, pool, weekCtx) {
+  pool.sort((a, b) => {
+    const ra = inst.requests[a], rb = inst.requests[b];
+    const sa = inst.students[ra.student], sb = inst.students[rb.student];
+    const wa = cohortWeight(sa.cohort), wb = cohortWeight(sb.cohort);
+    if (wa !== wb) return wb - wa;
+    return ra.submittedAt - rb.submittedAt;
+  });
+  const added = [];
+  for (const rqId of pool) {
+    if (state.assignReq.has(rqId)) continue;
+    const req = inst.requests[rqId];
+    for (const sid of req.prefs) {
+      const slot = inst.slots[sid]; if (!slot) continue;
+      if (isFeasible(req, slot, inst, state, weekCtx)) {
+        applyAssign(state, req, slot, inst);
+        added.push({ req: rqId, slot: sid });
+        break;
+      }
+    }
+  }
+  return added;
+}
+function pickW(w, r) {
+  let s = 0; for (const x of w) s += x;
+  let u = r() * s, acc = 0;
+  for (let i = 0; i < w.length; i++) { acc += w[i]; if (u <= acc) return i; }
+  return w.length - 1;
+}
+
+function runPhase2(inst, state, opts, events, weekCtx) {
+  const r = rng32(opts.seed + 1 + (weekCtx.week * 1000));
+  let cur = score(state, inst, weekCtx);
+  let best = cur;
+  let bestSnap = snap(state);
+  let temp = 1.0;
+  const cool = 0.99;
+  let stall = 0;
+  const dW = [1, 1, 1];
+
+  function cloneState(s) {
+    return {
+      capLeft: {...s.capLeft},
+      tutorMinLeft: {...s.tutorMinLeft},
+      tutorDayMin: {...s.tutorDayMin},
+      paidMinLeft: s.paidMinLeft,
+      assignReq: new Map(s.assignReq),
+      slotHold: new Map([...s.slotHold].map(([k, v]) => [k, [...v]])),
+      studentBusy: new Map([...s.studentBusy].map(([k, v]) => [k, v.map(x => ({...x}))])),
+      tutorBookings: new Map([...s.tutorBookings].map(([k, v]) => [k, v.map(x => ({...x}))])),
+      roomBookings: new Map([...s.roomBookings].map(([k, v]) => [k, v.map(x => ({...x}))])),
+    };
+  }
+  function restoreState(target, src) {
+    Object.assign(target.capLeft, src.capLeft);
+    Object.assign(target.tutorMinLeft, src.tutorMinLeft);
+    target.tutorDayMin = {...src.tutorDayMin};
+    target.paidMinLeft = src.paidMinLeft;
+    target.assignReq = new Map(src.assignReq);
+    target.slotHold = new Map([...src.slotHold].map(([k, v]) => [k, [...v]]));
+    target.studentBusy = new Map([...src.studentBusy].map(([k, v]) => [k, v.map(x => ({...x}))]));
+    target.tutorBookings = new Map([...src.tutorBookings].map(([k, v]) => [k, v.map(x => ({...x}))]));
+    target.roomBookings = new Map([...src.roomBookings].map(([k, v]) => [k, v.map(x => ({...x}))]));
+  }
+
+  for (let it = 1; it <= opts.maxIters; it++) {
+    const before = cloneState(state);
+    const dIdx = pickW(dW, r);
+    const kR = Math.max(2, Math.min(15, Math.round(0.12 * state.assignReq.size)));
+    let removed = [];
+    if (dIdx === 0) removed = destroyRandom(state, inst, kR, r);
+    else if (dIdx === 1) removed = destroyWorstRank(state, inst, kR);
+    else removed = destroyTutorOverload(state, inst, kR, r);
+    const pool = removed.map(x => x.req);
+    const inPool = new Set(pool);
+    for (const rq of inst.requests)
+      if (!inst.students[rq.student].dropped && !state.assignReq.has(rq.id) && !inPool.has(rq.id)) {
+        pool.push(rq.id); inPool.add(rq.id);
+      }
+    const added = repairGreedy(state, inst, pool, weekCtx);
+    const tSc = score(state, inst, weekCtx);
+    const delta = tSc - cur;
+    const accept = delta > 0 || r() < Math.exp(delta / Math.max(temp, 1e-9));
+    let outcome = "rejected", rew = 0;
+    if (accept) {
+      cur = tSc;
+      if (tSc > best + 1e-9) { best = tSc; bestSnap = snap(state); outcome = "new-best"; rew = 3; stall = 0; }
+      else if (delta > 0) { outcome = "improved"; rew = 1.5; }
+      else { outcome = "explored"; rew = 0.5; stall++; }
+    } else {
+      restoreState(state, before);
+      stall++;
+    }
+    dW[dIdx] = 0.9 * dW[dIdx] + 0.1 * (rew + 0.01);
+    events.push({ kind: "iter", it, removed, added: accept ? added : [], delta, cur, best, outcome });
+    temp *= cool;
+    if (stall >= opts.stallLimit) break;
+  }
+  const fresh = makeState(inst);
+  Object.assign(state, fresh);
+  for (const [rqId, slotId] of bestSnap) applyAssign(state, inst.requests[rqId], inst.slots[slotId], inst);
+}
+
+/* =================================================================
+   Preemptive overbooking (Phase 1.5)
+   ================================================================= */
+function preemptiveOverbook(inst, weekCtx) {
+  // For each slot, look at students whose top preferences include it; if average
+  // no-show probability is high, bump overbookBonus by 1.
+  const interest = new Map(); // slotId -> [students]
+  for (const req of inst.requests) {
+    if (inst.students[req.student].dropped) continue;
+    for (let k = 0; k < Math.min(3, req.prefs.length); k++) {
+      const sid = req.prefs[k];
+      if (!interest.has(sid)) interest.set(sid, []);
+      interest.get(sid).push(req.student);
+    }
+  }
+  let overbookedCount = 0;
+  for (const slot of inst.slots) {
+    slot.overbookBonus = 0;
+    const interested = interest.get(slot.id) || [];
+    if (interested.length < 3) continue;
+    let sum = 0; for (const s of interested) sum += inst.students[s].noShowProb;
+    const avgNSP = sum / interested.length;
+    if (avgNSP > 0.25 && slot.capacity < 3) {
+      slot.overbookBonus = 1;
+      overbookedCount++;
+    }
+  }
+  return overbookedCount;
+}
+
+/* =================================================================
+   WEEK runner — runs one week of scheduling
+   ================================================================= */
+function runWeek(inst, weekCtx, opts) {
+  const events = [];
+  events.push({ kind: "week-start", week: weekCtx.week, sickTutors: [...weekCtx.sickTutors], drops: weekCtx.dropsThisWeek });
+  const overbookedCount = preemptiveOverbook(inst, weekCtx);
+  events.push({ kind: "overbook-applied", week: weekCtx.week, count: overbookedCount });
+  const state = makeState(inst);
+  runPhase1(inst, state, events, weekCtx);
+  events.push({ kind: "phase1-done", week: weekCtx.week, placed: state.assignReq.size, sc: score(state, inst, weekCtx) });
+  runPhase2(inst, state, opts, events, weekCtx);
+  events.push({ kind: "week-done", week: weekCtx.week, placed: state.assignReq.size, sc: score(state, inst, weekCtx), assignSnap: [...state.assignReq] });
+  return events;
+}
+
+function runSemester(inst, opts) {
+  const r = rng32(opts.seed + 7777);
+  const allEvents = [];
+  const continuity = new Map();
+  const semesterStats = {
+    totalDropped: 0,
+    sickPerWeek: [],
+    overbookedPerWeek: [],
+    placedPerWeek: [],
+  };
+
+  for (let w = 0; w < inst.numWeeks; w++) {
+    // Drops in weeks 1-2 (0-indexed: w=0, w=1)
+    const dropsThisWeek = [];
+    if (w === 0 || w === 1) {
+      for (const stu of inst.students) {
+        if (!stu.dropped && bern(r, DROP_RATE_WEEK_1_2)) {
+          stu.dropped = true; stu.dropWeek = w;
+          dropsThisWeek.push(stu.id);
+          semesterStats.totalDropped++;
+        }
+      }
+    }
+    for (const sid of dropsThisWeek) allEvents.push({ kind: "drop", student: sid, week: w });
+
+    // Sick tutors (per week)
+    const sickTutors = new Set();
+    for (const t of inst.tutors) if (bern(r, SICK_RATE_PER_WEEK)) sickTutors.add(t.id);
+    semesterStats.sickPerWeek.push([...sickTutors]);
+
+    const weekCtx = { week: w, sickTutors, continuity, dropsThisWeek };
+    const weekEvents = runWeek(inst, weekCtx, opts);
+    allEvents.push(...weekEvents);
+
+    // Find the week-done event to grab snapshot
+    const wd = weekEvents.find(e => e.kind === "week-done");
+    semesterStats.placedPerWeek.push(wd ? wd.placed : 0);
+    semesterStats.overbookedPerWeek.push(weekEvents.find(e => e.kind === "overbook-applied")?.count || 0);
+
+    // Update continuity for next week
+    if (wd) {
+      for (const [rqId, slotId] of wd.assignSnap) {
+        const req = inst.requests[rqId];
+        const slot = inst.slots[slotId];
+        continuity.set(`${req.student}:${req.topic}`, slot.tutor);
+      }
+    }
+  }
+  allEvents.push({ kind: "semester-done", stats: semesterStats });
+  return allEvents;
+}
+
+/* =================================================================
+   Why-waiting
+   ================================================================= */
+function buildFullState(inst, simple) {
+  const fs = makeState(inst);
+  for (const [rqId, slotId] of simple.assignReq) {
+    const req = inst.requests[rqId];
+    const slot = inst.slots[slotId];
+    if (req && slot) applyAssign(fs, req, slot, inst);
+  }
+  return fs;
+}
+function whyWaiting(req, inst, fullState, weekCtx) {
+  if (inst.students[req.student].dropped) return REASON.DROPPED;
+  if (!req.prefs.length) return REASON.EMPTY_PREFS;
+  const reasons = new Set();
+  for (const sid of req.prefs) {
+    const slot = inst.slots[sid]; if (!slot) continue;
+    const stu = inst.students[req.student];
+    const room = inst.rooms[slot.room];
+    const tutor = inst.tutors[slot.tutor];
+    const why = feasible(req, slot, room, tutor, stu, fullState, inst, weekCtx);
+    if (why === null) return REASON.CAPACITY;
+    reasons.add(why);
+  }
+  if (reasons.size === 1) return [...reasons][0];
+  const order = [REASON.CAPTION, REASON.EXTRA_TIME, REASON.LANG, REASON.MODAL, REASON.ACCESS,
+                 REASON.EQUIPMENT, REASON.TUTOR_BREAK, REASON.TUTOR_TRAVEL, REASON.TUTOR_DAY,
+                 REASON.GROUP, REASON.CLASS, REASON.ZOOM, REASON.ROOM_USED, REASON.EXTERNAL,
+                 REASON.TUTOR_SICK, REASON.BUDGET, REASON.TUTOR_WK, REASON.STU_OVERLAP,
+                 REASON.POOL, REASON.TOPIC, REASON.CAPACITY];
+  for (const r of order) if (reasons.has(r)) return r;
+  return REASON.UNKNOWN;
+}
+
+/* =================================================================
+   VIEWER
+   ================================================================= */
+const HARD_PRESETS = [
+  { label: "Easy",   conflict: 0.10 },
+  { label: "Medium", conflict: 0.30 },
+  { label: "Hard",   conflict: 0.50 },
+  { label: "Crunch", conflict: 0.70 },
+];
+const HARD_LABELS = ["Easy", "Medium", "Hard", "Crunch"];
+
+const CONFIG = {
+  numStudents: 100,
+  numTutors: 16,
+  numRooms: 10,
+  numWeeks: 6,
+  hard: 1,
+  priorityRate: 0.30,
+  arabicRate: 0.30,
+  bilingualRate: 0.10,
+  onlineRate: 0.25,
+  accessibilityRate: 0.05,
+  captioningRate: 0.05,
+  extraTimeRate: 0.05,
+  seed: 42,
+  maxIters: 300,
+  stallLimit: 80,
+};
+const view = {
+  inst: null,
+  events: [],
+  weekEventStarts: [], // index in events[] where each week's events begin
+  weekEventEnds: [],   // index where each week's events end (exclusive)
+  cursor: 0,
+  playing: false,
+  speed: 1,
+  state: null,
+  phase: "idle",
+  cur: 0, best: 0, iter: 0,
+  currentWeek: 0,
+  weekSickTutors: [], // per-week Set of sick tutor IDs
+  weekContinuity: [],  // per-week continuity Map (after the week)
+  totalsByWeek: [],
+  changed: new Set(), removed: new Set(),
+  last: null,
+  filter: { pool: "all", cohort: "all", modality: "all" },
+};
+
+const $ = (id) => document.getElementById(id);
+const tooltip = $("tooltip");
+let PX_PER_MIN = 0.6;
+let TOTAL_PX = DAYS * VIS_SPAN * PX_PER_MIN;
+
+function rebuildGantt() {
+  const tc = view.inst.tutors.length;
+  PX_PER_MIN = tc > 22 ? 0.5 : tc > 16 ? 0.6 : 0.75;
+  TOTAL_PX = DAYS * VIS_SPAN * PX_PER_MIN;
+
+  const root = $("ganttRoot");
+  root.innerHTML = "";
+  const corner = document.createElement("div");
+  corner.className = "gantt-corner";
+  corner.textContent = "Tutor";
+  root.appendChild(corner);
+
+  const header = document.createElement("div");
+  header.className = "gantt-header";
+  header.style.width = TOTAL_PX + "px";
+  for (let d = 0; d < DAYS; d++) {
+    const dx = d * VIS_SPAN * PX_PER_MIN;
+    const m = document.createElement("div");
+    m.className = "day-mark"; m.style.left = dx + "px";
+    header.appendChild(m);
+    const l = document.createElement("div");
+    l.className = "day-label"; l.style.left = dx + "px";
+    l.textContent = ["Monday","Tuesday","Wednesday","Thursday","Friday"][d];
+    header.appendChild(l);
+    for (const hh of [9, 12, 15]) {
+      const ox = dx + ((hh * 60 - VIS_START) * PX_PER_MIN);
+      const h = document.createElement("div");
+      h.className = "hour-label";
+      h.style.left = ox + "px";
+      h.textContent = hh + ":00";
+      header.appendChild(h);
+    }
+  }
+  root.appendChild(header);
+
+  const tutorList = [...view.inst.tutors].sort((a, b) =>
+    a.pool !== b.pool ? a.pool - b.pool : a.id - b.id);
+  view.tutorList = tutorList;
+
+  const labels = document.createElement("div");
+  labels.className = "gantt-rows";
+
+  const rowYByTutor = new Map();
+  let y = 0;
+  let prevPool = null;
+  const bodyChildren = [];
+
+  const sick = view.weekSickTutors[view.currentWeek] || new Set();
+
+  for (let i = 0; i < tutorList.length; i++) {
+    const t = tutorList[i];
+    if (t.pool !== prevPool) {
+      const div = document.createElement("div");
+      div.className = "pool-divider" + (t.pool === POOL.GRAD ? " grad" : (t.pool === POOL.PAID ? " paid" : ""));
+      div.textContent = POOL_NAME[t.pool];
+      labels.appendChild(div);
+      const band = document.createElement("div");
+      band.className = "pool-band" + (t.pool === POOL.GRAD ? " grad" : (t.pool === POOL.PAID ? " paid" : ""));
+      band.style.top = y + "px";
+      bodyChildren.push(band);
+      y += 24;
+      prevPool = t.pool;
+    }
+    rowYByTutor.set(t.id, y);
+
+    const row = document.createElement("div");
+    row.className = "tutor-label" + (sick.has(t.id) ? " sick" : "");
+    const hue = (t.id * 47) % 360;
+    const av = document.createElement("span");
+    av.className = "tutor-avatar";
+    av.style.background = `hsl(${hue} 70% 55%)`;
+    av.textContent = t.name[0];
+    const nm = document.createElement("span");
+    nm.className = "tutor-name";
+    nm.textContent = t.name;
+    const tags = document.createElement("span");
+    tags.className = "tutor-tags";
+    const langTag = document.createElement("span");
+    langTag.className = "tag " + LANG_CLASS[t.language];
+    langTag.textContent = ["EN","AR","BI"][t.language];
+    tags.appendChild(langTag);
+    if (t.pool === POOL.PAID) {
+      const pd = document.createElement("span");
+      pd.className = "tag paid"; pd.textContent = "PAID";
+      tags.appendChild(pd);
+    }
+    row.appendChild(av);
+    row.appendChild(nm);
+    row.appendChild(tags);
+    row.dataset.tid = t.id;
+    row.addEventListener("mouseenter", (e) => showTutorTip(e, t));
+    row.addEventListener("mousemove", moveTip);
+    row.addEventListener("mouseleave", hideTip);
+    labels.appendChild(row);
+
+    const band = document.createElement("div");
+    band.className = "row-band" + (i % 2 === 0 ? " zebra" : "")
+      + (t.pool === POOL.GRAD ? " grad" : (t.pool === POOL.PAID ? " paid" : ""))
+      + (sick.has(t.id) ? " sick" : "");
+    band.style.top = y + "px";
+    bodyChildren.push(band);
+    y += 32;
+  }
+  labels.style.height = y + "px";
+  root.appendChild(labels);
+
+  const body = document.createElement("div");
+  body.className = "gantt-body";
+  body.style.height = y + "px";
+  body.style.width = TOTAL_PX + "px";
+  for (const b of bodyChildren) body.appendChild(b);
+
+  // External room blocks shown as gray-striped bars on the relevant rows
+  for (const slot of view.inst.slots) {
+    const room = view.inst.rooms[slot.room];
+    // skip; external blocks are room-level not slot-level — we'll render them per tutor row
+  }
+  // Render external blocks: find all (tutor, day, externalBlock) tuples and show them
+  for (const t of tutorList) {
+    const top = rowYByTutor.get(t.id);
+    if (top == null) continue;
+    // Each room with externalBlocks renders a gray bar at the tutor row IF that tutor uses that room often. To keep it visible & simple, show one strip per external block per room shared by this tutor.
+  }
+  // Simpler: just render external blocks once per room across the entire visible window, on a shared "external" track. We'll put them on each in-person tutor row whose slots intersect.
+  for (const t of tutorList) {
+    const top = rowYByTutor.get(t.id);
+    if (top == null) continue;
+    const tutorRooms = new Set(view.inst.slots.filter(s => s.tutor === t.id).map(s => s.room));
+    for (const rid of tutorRooms) {
+      const room = view.inst.rooms[rid];
+      if (!room.externalBlocks) continue;
+      for (const b of room.externalBlocks) {
+        const dIdx = Math.floor(b.start / DAY_MIN);
+        const inDay = b.start - dIdx * DAY_MIN - VIS_START;
+        if (inDay < 0 || inDay >= VIS_SPAN) continue;
+        const x = (dIdx * VIS_SPAN + inDay) * PX_PER_MIN;
+        const w = Math.max(20, (b.end - b.start) * PX_PER_MIN - 2);
+        const div = document.createElement("div");
+        div.className = "external-block";
+        div.style.left = x + "px";
+        div.style.top = (top + 4) + "px";
+        div.style.width = w + "px";
+        div.title = `${room.name} booked by another department`;
+        body.appendChild(div);
+      }
+    }
+  }
+
+  for (const slot of view.inst.slots) {
+    const top = rowYByTutor.get(slot.tutor);
+    if (top == null) continue;
+    const dIdx = Math.floor(slot.start / DAY_MIN);
+    const inDay = slot.start - dIdx * DAY_MIN - VIS_START;
+    const x = (dIdx * VIS_SPAN + inDay) * PX_PER_MIN;
+    const w = Math.max(36, (slot.end - slot.start) * PX_PER_MIN - 3);
+    const cell = document.createElement("div");
+    cell.className = "slot" + (slot.modality === MODALITY.ONLINE ? " modality-online" : "")
+      + ((slot.overbookBonus || 0) > 0 ? " overbook" : "");
+    cell.dataset.id = slot.id;
+    cell.style.left = x + "px";
+    cell.style.top = (top + 4) + "px";
+    cell.style.width = w + "px";
+    cell.addEventListener("mouseenter", (e) => showSlotTip(e, slot));
+    cell.addEventListener("mousemove", moveTip);
+    cell.addEventListener("mouseleave", hideTip);
+    body.appendChild(cell);
+  }
+  root.appendChild(body);
+}
+
+function rebuildWeekTabs() {
+  const tabs = $("weekTabs");
+  tabs.innerHTML = "";
+  for (let w = 0; w < view.inst.numWeeks; w++) {
+    const b = document.createElement("button");
+    b.className = "week-tab" + (w === view.currentWeek ? " active" : "");
+    const dot = document.createElement("span");
+    dot.className = "week-dot";
+    b.appendChild(dot);
+    b.appendChild(document.createTextNode(`Week ${w + 1}`));
+    b.addEventListener("click", () => jumpToWeek(w));
+    tabs.appendChild(b);
+  }
+}
+
+function jumpToWeek(w) {
+  setPlaying(false);
+  view.currentWeek = w;
+  // jump cursor to start of that week's events, then play through phase1 quickly to populate state
+  const start = view.weekEventStarts[w];
+  const end = view.weekEventEnds[w];
+  // Reset state, replay everything up to end of this week
+  view.state = { assignReq: new Map() };
+  view.cur = 0; view.best = 0; view.iter = 0; view.phase = "idle"; view.last = null;
+  view.cursor = 0;
+  while (view.cursor < end) {
+    applyEvent(view.events[view.cursor]);
+    view.cursor++;
+  }
+  rebuildGantt();
+  render();
+  rebuildWeekTabs();
+}
+
+function applyEvent(e) {
+  view.last = e;
+  if (e.kind === "week-start") {
+    view.currentWeek = e.week;
+    view.state.assignReq.clear();
+    view.weekSickTutors[e.week] = new Set(e.sickTutors);
+    view.phase = "week-start";
+    return;
+  }
+  if (e.kind === "drop") { /* drop is reflected in inst.students[e.student].dropped */ return; }
+  if (e.kind === "overbook-applied") { return; }
+  if (e.kind === "place") {
+    view.state.assignReq.set(e.req, e.slot);
+    view.changed.add(e.slot);
+    view.phase = "phase1";
+    return;
+  }
+  if (e.kind === "displace") {
+    view.state.assignReq.delete(e.victim);
+    view.state.assignReq.set(e.req, e.slot);
+    view.changed.add(e.slot);
+    view.phase = "phase1";
+    return;
+  }
+  if (e.kind === "phase1-done") {
+    view.cur = e.sc; view.best = e.sc;
+    view.phase = "phase2";
+    return;
+  }
+  if (e.kind === "iter") {
+    view.iter = e.it;
+    for (const r of e.removed) { view.state.assignReq.delete(r.req); view.removed.add(r.slot); }
+    for (const a of e.added)   { view.state.assignReq.set(a.req, a.slot); view.changed.add(a.slot); }
+    if (!e.added.length && e.removed.length) for (const r of e.removed) view.state.assignReq.set(r.req, r.slot);
+    view.cur = e.cur; view.best = e.best;
+    view.phase = "phase2";
+    return;
+  }
+  if (e.kind === "week-done") {
+    view.cur = e.sc; view.best = e.sc;
+    view.phase = "week-done";
+    return;
+  }
+  if (e.kind === "semester-done") { view.phase = "done"; return; }
+  if (e.kind === "arrival") {
+    if (e.slot != null) { view.state.assignReq.set(e.req, e.slot); view.changed.add(e.slot); }
+    return;
+  }
+  if (e.kind === "cancel") {
+    view.state.assignReq.delete(e.req);
+    view.removed.add(e.slot);
+    if (e.filledBy != null) { view.state.assignReq.set(e.filledBy, e.slot); view.changed.add(e.slot); }
+    return;
+  }
+  if (e.kind === "noshow") { view.changed.add(e.slot); return; }
+  if (e.kind === "tutor-sick-event") {
+    // Cancel all this tutor's placements
+    for (const sid of e.cancelledSlots) {
+      view.removed.add(sid);
+    }
+    for (const r of e.cancelledReqs) view.state.assignReq.delete(r);
+    view.weekSickTutors[view.currentWeek] = view.weekSickTutors[view.currentWeek] || new Set();
+    view.weekSickTutors[view.currentWeek].add(e.tutor);
+    return;
+  }
+}
+
+function formatSlotTime(slot) {
+  const dIdx = Math.floor(slot.start / DAY_MIN);
+  const day = ["Mon","Tue","Wed","Thu","Fri"][dIdx] || "?";
+  const inDay = slot.start - dIdx * DAY_MIN;
+  const h = Math.floor(inDay / 60), m = inDay % 60;
+  return `${day} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+/* =================================================================
+   RENDERING
+   ================================================================= */
+function render() {
+  const inv = new Map();
+  for (const [rqId, slotId] of view.state.assignReq) {
+    if (!inv.has(slotId)) inv.set(slotId, []);
+    inv.get(slotId).push(rqId);
+  }
+  const cells = document.querySelectorAll(".slot");
+  // Build continuity lookup for current week (from prior week's continuity map)
+  const prevContinuity = view.currentWeek > 0 ? (view.weekContinuity[view.currentWeek - 1] || new Map()) : new Map();
+
+  for (const cell of cells) {
+    const sid = +cell.dataset.id;
+    const slot = view.inst.slots[sid];
+    const holders = inv.get(sid) || [];
+    const slotPasses =
+      (view.filter.pool === "all" ||
+        (view.filter.pool === "ug" ? slot.pool === POOL.UG :
+         view.filter.pool === "grad" ? slot.pool === POOL.GRAD :
+         slot.pool === POOL.PAID))
+      && (view.filter.modality === "all" ||
+        (view.filter.modality === "online" ? slot.modality === MODALITY.ONLINE :
+         slot.modality === MODALITY.IN_PERSON));
+    const cohortPasses = view.filter.cohort === "all" ? true :
+      holders.some(h => {
+        const want = { regular: COHORT.REGULAR, support: COHORT.SUPPORT, athlete: COHORT.ATHLETE }[view.filter.cohort];
+        return view.inst.students[view.inst.requests[h].student].cohort === want;
+      });
+    cell.style.opacity = (slotPasses && (holders.length === 0 || cohortPasses)) ? "1" : "0.18";
+
+    cell.classList.remove("filled","regular","support","athlete","changed","removed");
+    cell.innerHTML = "";
+    if (holders.length) {
+      let topC = COHORT.REGULAR;
+      for (const h of holders) {
+        const c = view.inst.students[view.inst.requests[h].student].cohort;
+        if (c > topC) topC = c;
+      }
+      cell.classList.add("filled", COHORT_CLASS[topC]);
+      const bw = document.createElement("span");
+      bw.className = "bubbles";
+      for (let i = 0; i < Math.min(3, holders.length); i++) {
+        const req = view.inst.requests[holders[i]];
+        const stu = view.inst.students[req.student];
+        const b = document.createElement("span");
+        b.className = "student-bubble " + COHORT_CLASS[stu.cohort];
+        // continuity check
+        const prevTid = prevContinuity.get(`${stu.id}:${req.topic}`);
+        if (prevTid !== undefined && prevTid === slot.tutor) b.classList.add("continuity");
+        b.textContent = String(stu.id + 1);
+        bw.appendChild(b);
+      }
+      cell.appendChild(bw);
+      const icons = document.createElement("span");
+      icons.className = "icons";
+      if (slot.equipmentNeeded) icons.innerHTML += `<span title="needs lab">🧪</span>`;
+      if (view.inst.rooms[slot.room].accessible) icons.innerHTML += "<span title='accessible'>♿</span>";
+      if (view.inst.rooms[slot.room].captioning) icons.innerHTML += "<span title='captioning'>📝</span>";
+      if (holders.some(h => view.inst.students[view.inst.requests[h].student].needsExtraTime)) icons.innerHTML += "<span title='extra time'>⏱</span>";
+      if ((slot.overbookBonus || 0) > 0) icons.innerHTML += "<span title='overbooked +1'>📈</span>";
+      cell.appendChild(icons);
+    } else {
+      const e = document.createElement("span");
+      e.className = "empty-mark";
+      e.textContent = slot.equipmentNeeded ? "🧪" : "—";
+      cell.appendChild(e);
+    }
+    if (view.changed.has(sid)) cell.classList.add("changed");
+    if (view.removed.has(sid) && holders.length === 0) cell.classList.add("removed");
+  }
+  view.changed.clear();
+  view.removed.clear();
+
+  // Stats
+  const activeReqs = view.inst.requests.filter(rq => !view.inst.students[rq.student].dropped);
+  const total = activeReqs.length;
+  const placed = view.state.assignReq.size;
+  $("statPlaced").textContent = placed;
+  $("statTotal").textContent = total;
+  $("statWaiting").textContent = total - placed;
+  $("statQuality").textContent = view.cur.toFixed(1);
+
+  // Semester totals
+  let semPlaced = 0;
+  for (let w = 0; w <= view.currentWeek; w++) {
+    if (view.totalsByWeek[w] != null) semPlaced += view.totalsByWeek[w];
+  }
+  $("statSemPlaced").textContent = semPlaced;
+
+  // Phase chip
+  const chip = $("phaseChip"), ct = $("phaseText"), ph = $("phaseHint");
+  chip.classList.remove("done");
+  if (view.phase === "idle")           { ct.textContent = "Getting ready…"; ph.textContent = "loading"; }
+  else if (view.phase === "week-start"){ ct.textContent = `Week ${view.currentWeek + 1} · starting`; ph.textContent = "checking drops + sickness"; }
+  else if (view.phase === "phase1")    { ct.textContent = "Step 1 — matching"; ph.textContent = `week ${view.currentWeek + 1}, first pass`; }
+  else if (view.phase === "phase2")    { ct.textContent = "Step 2 — improving"; ph.textContent = `attempt #${view.iter}`; }
+  else if (view.phase === "week-done") { ct.textContent = `Week ${view.currentWeek + 1} done`; ph.textContent = "scroll to next week"; }
+  else if (view.phase === "done")      { ct.textContent = "Semester done"; ph.textContent = "all weeks complete"; chip.classList.add("done"); }
+  else { ct.textContent = view.phase; ph.textContent = ""; }
+
+  // Week meta
+  const sick = view.weekSickTutors[view.currentWeek] || new Set();
+  let drops = 0;
+  // count drops up through current week
+  for (let w = 0; w <= view.currentWeek; w++) {
+    drops += view.inst.students.filter(s => s.dropWeek === w).length;
+  }
+  $("kWdrops").textContent = drops;
+  $("kWsick").textContent = sick.size;
+  // overbookedPerWeek
+  let overbooked = 0;
+  for (const e of view.events.slice(view.weekEventStarts[view.currentWeek] || 0, view.weekEventEnds[view.currentWeek] || 0)) {
+    if (e.kind === "overbook-applied") overbooked = e.count;
+  }
+  $("kWover").textContent = overbooked;
+  // continuity count: how many placed sessions are with same tutor as last week
+  let contCount = 0;
+  for (const [rqId, slotId] of view.state.assignReq) {
+    const req = view.inst.requests[rqId];
+    const prevTid = prevContinuity.get(`${req.student}:${req.topic}`);
+    if (prevTid !== undefined && prevTid === view.inst.slots[slotId].tutor) contCount++;
+  }
+  $("kWcont").textContent = contCount;
+
+  // Phase progress bar (within current week)
+  const start = view.weekEventStarts[view.currentWeek] || 0;
+  const end = view.weekEventEnds[view.currentWeek] || view.events.length;
+  const total2 = end - start || 1;
+  const pos = Math.max(0, Math.min(total2, view.cursor - start));
+  $("progressFill").style.width = ((pos / total2) * 100) + "%";
+  $("progressLeft").textContent = `Step 1 · week ${view.currentWeek + 1}`;
+  $("progressRight").textContent = `Step 2 · week ${view.currentWeek + 1}`;
+
+  // Last move
+  const lm = $("lastMove"), lmt = $("lastMoveText"), lmm = $("lastMoveMeta");
+  lm.classList.remove("callout-good","callout-bad","callout-warn","callout-info","callout-neutral");
+  if (!view.last) {
+    lm.classList.add("callout-neutral");
+    lmt.innerHTML = "Getting started…"; lmm.textContent = "";
+  } else if (view.last.kind === "week-start") {
+    lm.classList.add("callout-info");
+    lmt.innerHTML = `🗓 Starting week ${view.last.week + 1}. ${view.last.sickTutors.length ? `<strong>${view.last.sickTutors.length}</strong> tutor(s) sick this week.` : "Everyone's healthy."}`;
+    lmm.textContent = view.last.drops.length ? `${view.last.drops.length} student(s) dropped at the start of this week.` : "";
+  } else if (view.last.kind === "place") {
+    lm.classList.add("callout-good");
+    const req = view.inst.requests[view.last.req];
+    const stu = view.inst.students[req.student];
+    const slot = view.inst.slots[view.last.slot];
+    const tutor = view.inst.tutors[slot.tutor];
+    lmt.innerHTML = `Placed <strong>${stu.name}</strong> (${COHORT_NAME[stu.cohort]}) for <strong>${TOPICS[req.topic]}</strong> with <strong>${tutor.name}</strong>.`;
+    lmm.textContent = `${formatSlotTime(slot)} · ${LANG_NAME[slot.language]} · ${slot.modality === MODALITY.ONLINE ? "online" : "in-person"}`;
+  } else if (view.last.kind === "displace") {
+    lm.classList.add("callout-good");
+    const req = view.inst.requests[view.last.req];
+    const victimReq = view.inst.requests[view.last.victim];
+    const stu = view.inst.students[req.student];
+    const victim = view.inst.students[victimReq.student];
+    lmt.innerHTML = `<strong>${stu.name}</strong> (${COHORT_NAME[stu.cohort]}) had higher priority and bumped <strong>${victim.name}</strong>.`;
+    lmm.textContent = `${victim.name}'s request will try its next choice.`;
+  } else if (view.last.kind === "phase1-done") {
+    lm.classList.add("callout-neutral");
+    lmt.innerHTML = `First pass done — placed <strong>${view.last.placed}</strong> requests this week. Now improving…`;
+    lmm.textContent = "";
+  } else if (view.last.kind === "iter") {
+    const e = view.last;
+    if (e.outcome === "new-best") { lm.classList.add("callout-good"); lmt.innerHTML = `★ Better arrangement! Re-tried <strong>${e.removed.length}</strong>, kept <strong>${e.added.length}</strong>.`; }
+    else if (e.outcome === "improved") { lm.classList.add("callout-good"); lmt.innerHTML = `Small improvement — quality up by <strong>${e.delta.toFixed(2)}</strong>.`; }
+    else if (e.outcome === "explored") { lm.classList.add("callout-neutral"); lmt.innerHTML = `Tried a different arrangement (slightly worse — kept to explore).`; }
+    else { lm.classList.add("callout-bad"); lmt.innerHTML = `Tried something but it wasn't better — went back.`; }
+    lmm.textContent = `Attempt ${e.it} · quality now ${e.cur.toFixed(1)} · best ${e.best.toFixed(1)}`;
+  } else if (view.last.kind === "week-done") {
+    lm.classList.add("callout-good");
+    lmt.innerHTML = `Week ${view.last.week + 1} complete — placed <strong>${view.last.placed}</strong> requests.`;
+    lmm.textContent = `Quality this week: ${view.last.sc.toFixed(1)}`;
+  } else if (view.last.kind === "semester-done") {
+    lm.classList.add("callout-good");
+    lmt.innerHTML = `🎓 Semester complete!`;
+    lmm.textContent = "Use week tabs to revisit any week.";
+  } else if (view.last.kind === "drop") {
+    lm.classList.add("callout-warn");
+    const stu = view.inst.students[view.last.student];
+    lmt.innerHTML = `<strong>${stu.name}</strong> dropped the course — their requests are removed for the rest of the semester.`;
+    lmm.textContent = "";
+  } else if (view.last.kind === "overbook-applied") {
+    lm.classList.add("callout-info");
+    lmt.innerHTML = `Overbooked <strong>${view.last.count}</strong> popular slots — high expected no-show probability among the students who want them.`;
+    lmm.textContent = "Outlined in yellow on the schedule.";
+  } else if (view.last.kind === "arrival") {
+    if (view.last.slot != null) {
+      lm.classList.add("callout-good");
+      const slot = view.inst.slots[view.last.slot];
+      lmt.innerHTML = `🆕 New request arrived — placed immediately with <strong>${view.inst.tutors[slot.tutor].name}</strong>.`;
+      lmm.textContent = formatSlotTime(slot);
+    } else {
+      lm.classList.add("callout-bad");
+      lmt.innerHTML = `🆕 New request arrived — no fit available.`;
+      lmm.textContent = "";
+    }
+  } else if (view.last.kind === "cancel") {
+    if (view.last.filledBy != null) { lm.classList.add("callout-good"); lmt.innerHTML = `Session canceled — freed seat filled from waiting list.`; }
+    else { lm.classList.add("callout-neutral"); lmt.innerHTML = `Session canceled — seat is now free.`; }
+    lmm.textContent = "";
+  } else if (view.last.kind === "noshow") {
+    lm.classList.add("callout-warn");
+    lmt.innerHTML = `No-show — the student didn't turn up.`;
+    lmm.textContent = "(seat counted as filled but unused)";
+  } else if (view.last.kind === "tutor-sick-event") {
+    lm.classList.add("callout-bad");
+    const t = view.inst.tutors[view.last.tutor];
+    lmt.innerHTML = `🤒 <strong>${t.name}</strong> called in sick — ${view.last.cancelledReqs.length} session(s) cancelled.`;
+    lmm.textContent = "Their row in the schedule is now striped red.";
+  }
+
+  // Waiting list + breakdown
+  const weekCtx = { week: view.currentWeek, sickTutors: view.weekSickTutors[view.currentWeek] || new Set(), continuity: prevContinuity };
+  let waiting = view.inst.requests
+    .filter(rq => !view.inst.students[rq.student].dropped && !view.state.assignReq.has(rq.id))
+    .map(rq => ({ req: rq, stu: view.inst.students[rq.student] }));
+  if (view.filter.cohort !== "all") {
+    const want = { regular: COHORT.REGULAR, support: COHORT.SUPPORT, athlete: COHORT.ATHLETE }[view.filter.cohort];
+    waiting = waiting.filter(x => x.stu.cohort === want);
+  }
+  if (view.filter.pool !== "all") {
+    const want = view.filter.pool === "ug" ? POOL.UG : view.filter.pool === "grad" ? POOL.GRAD : POOL.PAID;
+    waiting = waiting.filter(x => x.stu.pool === want);
+  }
+  $("waitingCount").textContent = waiting.length === 0 ? "everyone placed 🎉" : waiting.length;
+  waiting.sort((a, b) => cohortWeight(b.stu.cohort) - cohortWeight(a.stu.cohort) || a.req.id - b.req.id);
+
+  const fullState = buildFullState(view.inst, view.state);
+  const reasonCounts = new Map();
+  for (const { req } of waiting) {
+    const why = whyWaiting(req, view.inst, fullState, weekCtx);
+    reasonCounts.set(why, (reasonCounts.get(why) || 0) + 1);
+    req._why = why;
+  }
+  const breakdown = $("breakdownBody");
+  breakdown.innerHTML = "";
+  if (reasonCounts.size === 0) {
+    breakdown.innerHTML = "<div style='color:var(--good);font-weight:600;'>🎉 Every request is placed this week.</div>";
+  } else {
+    const sorted = [...reasonCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const max = sorted[0][1];
+    for (const [reason, count] of sorted) {
+      const row = document.createElement("div");
+      row.className = "breakdown-row";
+      row.innerHTML = `
+        <span style="color:var(--bad);font-weight:700;font-size:11px;">·</span>
+        <span class="br-label">${reason}</span>
+        <span class="br-count">${count}</span>
+        <div class="br-bar"><span style="width:${(count / max) * 100}%"></span></div>`;
+      breakdown.appendChild(row);
+    }
+  }
+
+  const list = $("waitingList");
+  list.innerHTML = "";
+  const showMax = 50;
+  for (const { req, stu } of waiting.slice(0, showMax)) {
+    const div = document.createElement("div");
+    div.className = "waiting-item";
+    const flags = [];
+    if (stu.languagePref === LANG.AR) flags.push(`<span class="waiting-flag">AR</span>`);
+    if (stu.modalityPref === MODALITY.ONLINE) flags.push(`<span class="waiting-flag">online</span>`);
+    if (stu.needsAccess) flags.push(`<span class="waiting-flag">♿</span>`);
+    if (stu.needsCaption) flags.push(`<span class="waiting-flag cap">CAP</span>`);
+    if (stu.needsExtraTime) flags.push(`<span class="waiting-flag xt">XT</span>`);
+    if (stu.maxGroupSize === 1) flags.push(`<span class="waiting-flag">1-on-1</span>`);
+    div.innerHTML = `
+      <span class="waiting-name">
+        <span class="pri-icon ${COHORT_CLASS[stu.cohort]}">${stu.id + 1}</span>
+        ${stu.name} <span style="color:var(--ink-faint);font-size:10px;">· ${TOPICS[req.topic]}</span>
+      </span>
+      <span class="waiting-flags">${flags.join("")}</span>
+      <span class="waiting-why" title="${req._why}">${req._why}</span>`;
+    list.appendChild(div);
+  }
+  if (waiting.length > showMax) {
+    const more = document.createElement("div");
+    more.className = "waiting-more";
+    more.textContent = `…and ${waiting.length - showMax} more`;
+    list.appendChild(more);
+  }
+  if (waiting.length === 0) {
+    const all = document.createElement("div");
+    all.className = "waiting-more";
+    all.textContent = "Every active student got a session this week.";
+    list.appendChild(all);
+  }
+
+  const max = Math.max(0, view.events.length);
+  $("tlSlider").max = max;
+  $("tlSlider").value = view.cursor;
+  $("tlMax").textContent = max;
+  $("tlPos").textContent = view.cursor;
+  $("tlSlider").style.setProperty("--p", (max ? view.cursor / max * 100 : 0) + "%");
+}
+
+function showSlotTip(ev, slot) {
+  const tutor = view.inst.tutors[slot.tutor];
+  const room = view.inst.rooms[slot.room];
+  const inThis = [];
+  for (const [rq, sl] of view.state.assignReq) if (sl === slot.id) inThis.push(rq);
+  let html = `<div class="t-row"><span>Tutor</span><span><b>${tutor.name}</b> (${POOL_NAME[tutor.pool]})</span></div>
+              <div class="t-row"><span>Topic</span><span>${TOPICS[slot.topic]}</span></div>
+              <div class="t-row"><span>When</span><span>${formatSlotTime(slot)}</span></div>
+              <div class="t-row"><span>Language</span><span>${LANG_NAME[slot.language]}</span></div>
+              <div class="t-row"><span>Format</span><span>${slot.modality === MODALITY.ONLINE ? "online" : "in-person"}</span></div>
+              <div class="t-row"><span>Room</span><span>${room.name}${room.accessible ? " · ♿" : ""}${room.captioning ? " · 📝 captioning" : ""}</span></div>`;
+  if (slot.equipmentNeeded) html += `<div class="t-row"><span>Needs</span><span>🧪 lab</span></div>`;
+  html += `<div class="t-row"><span>Seats</span><span>${inThis.length} / ${slot.capacity}${slot.overbookBonus ? ` (+${slot.overbookBonus} overbook)` : ""}</span></div>`;
+  if ((slot.overbookBonus || 0) > 0) html += `<div class="t-row"><span></span><span style="color:#fcd34d">📈 overbooked — popular slot with high no-show students</span></div>`;
+  if (inThis.length) {
+    html += `<div class="t-divider"></div>
+             <div class="t-row"><span>Holds</span><span>${inThis.map(i => {
+               const r = view.inst.requests[i];
+               return view.inst.students[r.student].name + " (" + TOPICS[r.topic] + ")";
+             }).join(", ")}</span></div>`;
+  } else {
+    html += `<div class="t-divider"></div><div class="t-row" style="opacity:0.7"><span>Empty</span><span>—</span></div>`;
+  }
+  tooltip.innerHTML = html;
+  tooltip.classList.add("show");
+  moveTip(ev);
+}
+function showTutorTip(ev, t) {
+  const sick = (view.weekSickTutors[view.currentWeek] || new Set()).has(t.id);
+  let html = `<div class="t-row"><span>Tutor</span><span><b>${t.name}</b>${sick ? " · 🤒 SICK THIS WEEK" : ""}</span></div>
+              <div class="t-row"><span>Pool</span><span>${POOL_NAME[t.pool]}</span></div>
+              <div class="t-row"><span>Topics</span><span>${t.topics.map(tt => TOPICS[tt]).join(", ")}</span></div>
+              <div class="t-row"><span>Language</span><span>${LANG_NAME[t.language]}</span></div>
+              <div class="t-row"><span>Weekly cap</span><span>${t.weeklyCapMin / 60}h</span></div>
+              <div class="t-row"><span>Daily cap</span><span>${t.dailyCapMin / 60}h</span></div>`;
+  tooltip.innerHTML = html;
+  tooltip.classList.add("show");
+  moveTip(ev);
+}
+function moveTip(ev) { tooltip.style.left = ev.clientX + "px"; tooltip.style.top = ev.clientY + "px"; }
+function hideTip() { tooltip.classList.remove("show"); }
+
+/* =================================================================
+   RUN
+   ================================================================= */
+function freshRun() {
+  const hard = HARD_PRESETS[CONFIG.hard];
+  view.inst = generateInstance({
+    seed: CONFIG.seed,
+    numStudents: CONFIG.numStudents,
+    numTutors: CONFIG.numTutors,
+    numRooms: CONFIG.numRooms,
+    numWeeks: CONFIG.numWeeks,
+    priorityRate: CONFIG.priorityRate,
+    arabicRate: CONFIG.arabicRate,
+    bilingualRate: CONFIG.bilingualRate,
+    onlineRate: CONFIG.onlineRate,
+    accessibilityRate: CONFIG.accessibilityRate,
+    captioningRate: CONFIG.captioningRate,
+    extraTimeRate: CONFIG.extraTimeRate,
+    conflictRate: hard.conflict,
+  });
+  view.events = runSemester(view.inst, { seed: CONFIG.seed, maxIters: CONFIG.maxIters, stallLimit: CONFIG.stallLimit });
+
+  // Build per-week event ranges
+  view.weekEventStarts = new Array(view.inst.numWeeks).fill(0);
+  view.weekEventEnds = new Array(view.inst.numWeeks).fill(view.events.length);
+  view.weekSickTutors = new Array(view.inst.numWeeks);
+  view.weekContinuity = new Array(view.inst.numWeeks);
+  view.totalsByWeek = new Array(view.inst.numWeeks);
+  let prevWeek = -1;
+  for (let i = 0; i < view.events.length; i++) {
+    const e = view.events[i];
+    if (e.kind === "week-start") {
+      view.weekEventStarts[e.week] = i;
+      if (prevWeek >= 0) view.weekEventEnds[prevWeek] = i;
+      prevWeek = e.week;
+      view.weekSickTutors[e.week] = new Set(e.sickTutors);
+    }
+    if (e.kind === "week-done") {
+      view.totalsByWeek[e.week] = e.placed;
+      // Compute continuity map after this week
+      const cm = view.currentWeek === 0 ? new Map() : new Map(view.weekContinuity[e.week - 1] || new Map());
+      for (const [rqId, slotId] of e.assignSnap) {
+        const req = view.inst.requests[rqId];
+        cm.set(`${req.student}:${req.topic}`, view.inst.slots[slotId].tutor);
+      }
+      view.weekContinuity[e.week] = cm;
+    }
+  }
+  if (prevWeek >= 0) view.weekEventEnds[prevWeek] = view.events.length;
+
+  view.cursor = 0;
+  view.state = { assignReq: new Map() };
+  view.cur = 0; view.best = 0; view.iter = 0; view.phase = "idle"; view.last = null;
+  view.currentWeek = 0;
+  rebuildWeekTabs();
+  rebuildGantt();
+  render();
+  setPlaying(true);
+}
+function setPlaying(p) {
+  view.playing = p;
+  $("playIcon").innerHTML = p ? '<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+  if (p) { view._last = performance.now(); cancelAnimationFrame(view._raf); view._raf = requestAnimationFrame(loop); }
+}
+function loop(now) {
+  if (!view.playing) return;
+  const dt = Math.max(0, now - (view._last || now));
+  view._last = now;
+  const eps = 14 * view.speed;
+  const adv = Math.max(1, Math.round((dt / 1000) * eps));
+  let done = 0;
+  while (done < adv && view.cursor < view.events.length) {
+    const e = view.events[view.cursor];
+    if (e.kind === "week-start" && e.week !== view.currentWeek) {
+      // Crossing into a new week — rebuild gantt to reflect new sick tutors / external blocks
+      view.currentWeek = e.week;
+      // ensure ALL sick tutors and drops for this week are applied so rendering is correct
+      applyEvent(e); view.cursor++; done++;
+      rebuildGantt(); rebuildWeekTabs();
+      continue;
+    }
+    applyEvent(e); view.cursor++; done++;
+  }
+  render();
+  if (view.cursor >= view.events.length) { setPlaying(false); return; }
+  view._raf = requestAnimationFrame(loop);
+}
+
+/* =================================================================
+   Phase 3 (live disruption) actions
+   ================================================================= */
+function phase3Arrival() {
+  setPlaying(false);
+  const r = rng32((CONFIG.seed * 13 + view.events.length) >>> 0);
+  const candidates = view.inst.students.filter(s => !s.dropped);
+  if (!candidates.length) return;
+  const stu = candidates[ri(r, 0, candidates.length - 1)];
+  const topic = ri(r, 0, TOPICS.length - 1);
+  const cand = view.inst.slots.filter(s =>
+    s.topic === topic && s.pool === stu.pool &&
+    (s.language === LANG.BI || stu.languagePref === LANG.BI || s.language === stu.languagePref) &&
+    (stu.modalityPref === MODALITY.EITHER || s.modality === stu.modalityPref) &&
+    s.capacity <= stu.maxGroupSize
+  ).map(s => s.id);
+  shuf(r, cand);
+  const newReq = { id: view.inst.requests.length, student: stu.id, topic, prefs: cand.slice(0, 6), submittedAt: 10000 + view.inst.requests.length };
+  view.inst.requests.push(newReq);
+  stu.requests.push(newReq.id);
+  const weekCtx = { week: view.currentWeek, sickTutors: view.weekSickTutors[view.currentWeek] || new Set(), continuity: view.weekContinuity[view.currentWeek - 1] || new Map() };
+  const fs = buildFullState(view.inst, view.state);
+  let placedSlot = null;
+  for (const sid of newReq.prefs) {
+    const slot = view.inst.slots[sid];
+    if (isFeasible(newReq, slot, view.inst, fs, weekCtx)) { placedSlot = sid; break; }
+  }
+  const e = { kind: "arrival", req: newReq.id, slot: placedSlot };
+  view.events.splice(view.cursor, 0, e);
+  view.weekEventEnds[view.currentWeek]++;
+  // shift later starts/ends
+  for (let w = view.currentWeek + 1; w < view.weekEventStarts.length; w++) {
+    view.weekEventStarts[w]++; view.weekEventEnds[w]++;
+  }
+  applyEvent(e); view.cursor++;
+  render();
+}
+function phase3Cancel() {
+  setPlaying(false);
+  if (view.state.assignReq.size === 0) return;
+  const r = rng32((CONFIG.seed * 7 + view.events.length) >>> 0);
+  const ids = [...view.state.assignReq.keys()];
+  const reqId = ids[ri(r, 0, ids.length - 1)];
+  const slotId = view.state.assignReq.get(reqId);
+  view.state.assignReq.delete(reqId);
+  const weekCtx = { week: view.currentWeek, sickTutors: view.weekSickTutors[view.currentWeek] || new Set(), continuity: view.weekContinuity[view.currentWeek - 1] || new Map() };
+  const fs = buildFullState(view.inst, view.state);
+  const waiting = view.inst.requests.filter(rq => !view.inst.students[rq.student].dropped && !view.state.assignReq.has(rq.id) && rq.prefs.includes(slotId));
+  waiting.sort((a, b) => {
+    const sa = view.inst.students[a.student], sb = view.inst.students[b.student];
+    if (cohortWeight(sa.cohort) !== cohortWeight(sb.cohort)) return cohortWeight(sb.cohort) - cohortWeight(sa.cohort);
+    return a.submittedAt - b.submittedAt;
+  });
+  let filledBy = null;
+  for (const cand of waiting) {
+    if (isFeasible(cand, view.inst.slots[slotId], view.inst, fs, weekCtx)) { filledBy = cand.id; break; }
+  }
+  const e = { kind: "cancel", req: reqId, slot: slotId, filledBy };
+  view.events.splice(view.cursor, 0, e);
+  view.weekEventEnds[view.currentWeek]++;
+  for (let w = view.currentWeek + 1; w < view.weekEventStarts.length; w++) {
+    view.weekEventStarts[w]++; view.weekEventEnds[w]++;
+  }
+  applyEvent(e); view.cursor++;
+  render();
+}
+function phase3NoShow() {
+  setPlaying(false);
+  if (view.state.assignReq.size === 0) return;
+  const r = rng32((CONFIG.seed * 23 + view.events.length) >>> 0);
+  const ids = [...view.state.assignReq.keys()];
+  const reqId = ids[ri(r, 0, ids.length - 1)];
+  const slotId = view.state.assignReq.get(reqId);
+  const e = { kind: "noshow", req: reqId, slot: slotId };
+  view.events.splice(view.cursor, 0, e);
+  view.weekEventEnds[view.currentWeek]++;
+  for (let w = view.currentWeek + 1; w < view.weekEventStarts.length; w++) {
+    view.weekEventStarts[w]++; view.weekEventEnds[w]++;
+  }
+  applyEvent(e); view.cursor++;
+  render();
+}
+function phase3TutorSick() {
+  setPlaying(false);
+  const r = rng32((CONFIG.seed * 41 + view.events.length) >>> 0);
+  const tutors = view.inst.tutors.filter(t => !(view.weekSickTutors[view.currentWeek] || new Set()).has(t.id));
+  if (!tutors.length) return;
+  const t = tutors[ri(r, 0, tutors.length - 1)];
+  // cancel their sessions this week
+  const cancelledReqs = [];
+  const cancelledSlots = [];
+  for (const [rqId, slotId] of [...view.state.assignReq.entries()]) {
+    if (view.inst.slots[slotId].tutor === t.id) {
+      view.state.assignReq.delete(rqId);
+      cancelledReqs.push(rqId);
+      cancelledSlots.push(slotId);
+    }
+  }
+  const e = { kind: "tutor-sick-event", tutor: t.id, cancelledReqs, cancelledSlots };
+  view.events.splice(view.cursor, 0, e);
+  view.weekEventEnds[view.currentWeek]++;
+  for (let w = view.currentWeek + 1; w < view.weekEventStarts.length; w++) {
+    view.weekEventStarts[w]++; view.weekEventEnds[w]++;
+  }
+  applyEvent(e); view.cursor++;
+  rebuildGantt();
+  render();
+}
+function phase3Drop() {
+  setPlaying(false);
+  const r = rng32((CONFIG.seed * 53 + view.events.length) >>> 0);
+  const active = view.inst.students.filter(s => !s.dropped);
+  if (!active.length) return;
+  const stu = active[ri(r, 0, active.length - 1)];
+  stu.dropped = true; stu.dropWeek = view.currentWeek;
+  // remove their assignments
+  for (const rqId of stu.requests) {
+    if (view.state.assignReq.has(rqId)) view.state.assignReq.delete(rqId);
+  }
+  const e = { kind: "drop", student: stu.id, week: view.currentWeek };
+  view.events.splice(view.cursor, 0, e);
+  view.weekEventEnds[view.currentWeek]++;
+  for (let w = view.currentWeek + 1; w < view.weekEventStarts.length; w++) {
+    view.weekEventStarts[w]++; view.weekEventEnds[w]++;
+  }
+  applyEvent(e); view.cursor++;
+  render();
+}
+
+/* =================================================================
+   Drawer + wiring
+   ================================================================= */
+function openDrawer(tab) {
+  $("drawer").classList.add("open");
+  document.querySelectorAll(".drawer-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+  document.querySelectorAll(".drawer-pane").forEach(p => p.classList.toggle("active", p.dataset.pane === tab));
+  $("drawerTitle").textContent = tab === "help" ? "How to read this" : tab === "rules" ? "All rules and dynamics" : "Change the setup";
+}
+function closeDrawer() { $("drawer").classList.remove("open"); }
+function setRangeFill(el) {
+  const min = +el.min || 0, max = +el.max || 100;
+  el.style.setProperty("--p", (((+el.value) - min) / (max - min)) * 100 + "%");
+}
+function syncDrawerLabels() {
+  $("rngStudents").value = CONFIG.numStudents;
+  $("rngTutors").value = CONFIG.numTutors;
+  $("rngRooms").value = CONFIG.numRooms;
+  $("rngWeeks").value = CONFIG.numWeeks;
+  $("rngHard").value = CONFIG.hard;
+  $("rngPri").value = Math.round(CONFIG.priorityRate * 100);
+  $("rngArabic").value = Math.round(CONFIG.arabicRate * 100);
+  $("rngOnline").value = Math.round(CONFIG.onlineRate * 100);
+  $("rngAcc").value = Math.round(CONFIG.accessibilityRate * 100);
+  $("rngCap").value = Math.round(CONFIG.captioningRate * 100);
+  $("rngXT").value = Math.round(CONFIG.extraTimeRate * 100);
+  $("lblStudents").textContent = CONFIG.numStudents;
+  $("lblTutors").textContent = CONFIG.numTutors;
+  $("lblRooms").textContent = CONFIG.numRooms;
+  $("lblWeeks").textContent = CONFIG.numWeeks + " weeks";
+  $("lblHard").textContent = HARD_LABELS[CONFIG.hard];
+  $("lblPri").textContent = Math.round(CONFIG.priorityRate * 100) + "%";
+  $("lblArabic").textContent = Math.round(CONFIG.arabicRate * 100) + "%";
+  $("lblOnline").textContent = Math.round(CONFIG.onlineRate * 100) + "%";
+  $("lblAcc").textContent = Math.round(CONFIG.accessibilityRate * 100) + "%";
+  $("lblCap").textContent = Math.round(CONFIG.captioningRate * 100) + "%";
+  $("lblXT").textContent = Math.round(CONFIG.extraTimeRate * 100) + "%";
+  ["rngStudents","rngTutors","rngRooms","rngWeeks","rngHard","rngPri","rngArabic","rngOnline","rngAcc","rngCap","rngXT"].forEach(id => setRangeFill($(id)));
+}
+
+function wire() {
+  $("settingsBtn").addEventListener("click", () => openDrawer("setup"));
+  $("helpBtn").addEventListener("click", () => openDrawer("rules"));
+  $("restartBtn").addEventListener("click", () => { CONFIG.seed = (CONFIG.seed + 1) | 0; freshRun(); });
+  document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeDrawer));
+  document.querySelectorAll(".drawer-tab").forEach(b => b.addEventListener("click", () => openDrawer(b.dataset.tab)));
+
+  $("drawerReset").addEventListener("click", () => {
+    CONFIG.numStudents = 100; CONFIG.numTutors = 16; CONFIG.numRooms = 10; CONFIG.numWeeks = 6;
+    CONFIG.hard = 1; CONFIG.priorityRate = 0.30; CONFIG.arabicRate = 0.30;
+    CONFIG.onlineRate = 0.25; CONFIG.accessibilityRate = 0.05;
+    CONFIG.captioningRate = 0.05; CONFIG.extraTimeRate = 0.05;
+    syncDrawerLabels();
+  });
+  $("drawerApply").addEventListener("click", () => {
+    CONFIG.numStudents = +$("rngStudents").value;
+    CONFIG.numTutors   = +$("rngTutors").value;
+    CONFIG.numRooms    = +$("rngRooms").value;
+    CONFIG.numWeeks    = +$("rngWeeks").value;
+    CONFIG.hard        = +$("rngHard").value;
+    CONFIG.priorityRate     = +$("rngPri").value / 100;
+    CONFIG.arabicRate       = +$("rngArabic").value / 100;
+    CONFIG.onlineRate       = +$("rngOnline").value / 100;
+    CONFIG.accessibilityRate= +$("rngAcc").value / 100;
+    CONFIG.captioningRate   = +$("rngCap").value / 100;
+    CONFIG.extraTimeRate    = +$("rngXT").value / 100;
+    closeDrawer();
+    freshRun();
+  });
+  const liveLabels = {
+    rngStudents: () => $("lblStudents").textContent = $("rngStudents").value,
+    rngTutors:   () => $("lblTutors").textContent = $("rngTutors").value,
+    rngRooms:    () => $("lblRooms").textContent = $("rngRooms").value,
+    rngWeeks:    () => $("lblWeeks").textContent = $("rngWeeks").value + " weeks",
+    rngHard:     () => $("lblHard").textContent = HARD_LABELS[+$("rngHard").value],
+    rngPri:      () => $("lblPri").textContent = $("rngPri").value + "%",
+    rngArabic:   () => $("lblArabic").textContent = $("rngArabic").value + "%",
+    rngOnline:   () => $("lblOnline").textContent = $("rngOnline").value + "%",
+    rngAcc:      () => $("lblAcc").textContent = $("rngAcc").value + "%",
+    rngCap:      () => $("lblCap").textContent = $("rngCap").value + "%",
+    rngXT:       () => $("lblXT").textContent = $("rngXT").value + "%",
+  };
+  Object.keys(liveLabels).forEach(id => $(id).addEventListener("input", () => { liveLabels[id](); setRangeFill($(id)); }));
+
+  $("playBtn").addEventListener("click", () => setPlaying(!view.playing));
+  $("rewindBtn").addEventListener("click", () => { setPlaying(false); jumpToWeek(view.currentWeek); });
+  $("endBtn").addEventListener("click", () => { setPlaying(false); jumpToWeek(view.currentWeek); /* end of current week */ view.cursor = view.weekEventEnds[view.currentWeek]; while (view.cursor < view.events.length && view.events[view.cursor].kind !== "week-start") { applyEvent(view.events[view.cursor]); view.cursor++; } render(); });
+  $("stepBackBtn").addEventListener("click", () => { setPlaying(false); jumpToWeek(view.currentWeek); /* re-seek minus 1 */ });
+  $("stepFwdBtn").addEventListener("click", () => {
+    setPlaying(false);
+    if (view.cursor < view.events.length) { applyEvent(view.events[view.cursor]); view.cursor++; render(); }
+  });
+  $("tlSlider").addEventListener("input", (e) => {
+    setPlaying(false);
+    const target = +e.target.value;
+    // determine which week target falls in
+    let w = 0;
+    for (let i = 0; i < view.inst.numWeeks; i++) if (target >= view.weekEventStarts[i]) w = i;
+    if (w !== view.currentWeek) jumpToWeek(w);
+    while (view.cursor < target) { applyEvent(view.events[view.cursor]); view.cursor++; }
+    render();
+  });
+  $("speedGroup").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    $("speedGroup").querySelectorAll("button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); view.speed = +b.dataset.s;
+  });
+  ["poolFilter","cohortFilter","modalityFilter"].forEach(group => {
+    $(group).addEventListener("click", (e) => {
+      const b = e.target.closest("button.filter-pill"); if (!b) return;
+      $(group).querySelectorAll(".filter-pill").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      const key = group === "poolFilter" ? "pool" : group === "cohortFilter" ? "cohort" : "modality";
+      view.filter[key] = b.dataset.v;
+      render();
+    });
+  });
+
+  $("evtArrival").addEventListener("click", phase3Arrival);
+  $("evtCancel").addEventListener("click", phase3Cancel);
+  $("evtNoShow").addEventListener("click", phase3NoShow);
+  $("evtSick").addEventListener("click", phase3TutorSick);
+  $("evtDrop").addEventListener("click", phase3Drop);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    if (e.code === "Space") { e.preventDefault(); setPlaying(!view.playing); }
+    else if (e.code === "ArrowRight") { setPlaying(false);
+      if (view.cursor < view.events.length) { applyEvent(view.events[view.cursor]); view.cursor++; render(); } }
+  });
+
+  const onb = $("onboarding");
+  if (!localStorage.getItem("ttp_seen_v3")) onb.classList.add("show");
+  const dismiss = () => { onb.classList.remove("show"); localStorage.setItem("ttp_seen_v3", "1"); };
+  $("obSkip").addEventListener("click", dismiss);
+  $("obStart").addEventListener("click", dismiss);
+}
+
+function boot() {
+  try {
+    wire();
+    syncDrawerLabels();
+    freshRun();
+  } catch (err) {
+    const div = document.createElement("div");
+    div.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;padding:14px;background:#fee2e2;color:#7f1d1d;font-family:monospace;font-size:12px;white-space:pre-wrap;";
+    div.textContent = "Oops:\n\n" + (err && err.stack ? err.stack : err);
+    document.body.appendChild(div);
+    console.error(err);
+  }
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+</script>
+</body>
+</html>

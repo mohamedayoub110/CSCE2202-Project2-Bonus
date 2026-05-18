@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DA-ALNS-OR Tutoring Scheduler — Visualizer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">●</span>
+      <div>
+        <h1>DA-ALNS-OR Scheduler</h1>
+        <p class="subtitle">Deferred-Acceptance · Adaptive Large Neighborhood Search · Online Repair</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="settingsBtn" class="btn btn-ghost" title="Edit instance and algorithm parameters">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+      <button id="runBtn" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Run
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <section class="panel">
+        <header class="panel-h">
+          <h3>Instance</h3>
+          <span class="badge" id="instanceBadge">empty</span>
+        </header>
+        <dl class="kv">
+          <div><dt>Tutors</dt><dd id="statTutors">—</dd></div>
+          <div><dt>Slots</dt><dd id="statSlots">—</dd></div>
+          <div><dt>Rooms</dt><dd id="statRooms">—</dd></div>
+          <div><dt>Requests</dt><dd id="statRequests">—</dd></div>
+          <div><dt>Demand</dt><dd id="statDemand">—</dd></div>
+        </dl>
+        <div class="legend">
+          <span class="dot dot-std"></span><span>Standard</span>
+          <span class="dot dot-aw"></span><span>Academic warning</span>
+          <span class="dot dot-pa"></span><span>Pro athlete</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel-h">
+          <h3>Progress</h3>
+          <span class="badge phase-badge" id="phaseBadge">idle</span>
+        </header>
+        <dl class="kv">
+          <div><dt>Iteration</dt><dd><span id="statIter">0</span><span class="muted"> / <span id="statIterMax">0</span></span></dd></div>
+          <div><dt>Score</dt><dd><span id="statScore" class="bignum">0.00</span></dd></div>
+          <div><dt>Best score</dt><dd id="statBest">0.00</dd></div>
+          <div><dt>Assigned</dt><dd><span id="statAssigned">0</span><span class="muted"> / <span id="statTotal">0</span></span></dd></div>
+          <div><dt>Phase 1 placed</dt><dd id="statP1">0</dd></div>
+          <div><dt>Temperature</dt><dd id="statTemp">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <header class="panel-h">
+          <h3>Last move</h3>
+        </header>
+        <div class="lastmove" id="lastMoveCard">
+          <p class="muted">Press <strong>Run</strong> to start.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel-h">
+          <h3>Unassigned</h3>
+          <span class="badge" id="unassignedBadge">0</span>
+        </header>
+        <ul class="unassigned-list" id="unassignedList"></ul>
+      </section>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <section class="main">
+      <section class="panel panel-grow">
+        <header class="panel-h">
+          <h3>Schedule</h3>
+          <div class="tab-row">
+            <span class="muted small">Hover a tutor row or slot for details</span>
+          </div>
+        </header>
+        <div class="gantt-wrap">
+          <div class="gantt-grid">
+            <div class="gantt-row gantt-row-h gantt-row-corner">tutor</div>
+            <div class="gantt-row gantt-row-h" id="ganttHeader"></div>
+            <div class="gantt-row gantt-row-tutors" id="ganttTutorList"></div>
+            <div class="gantt-row gantt-row-body" id="ganttBody"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-two">
+        <section class="panel">
+          <header class="panel-h">
+            <h3>Objective over time</h3>
+            <span class="muted small" id="scoreLegend">—</span>
+          </header>
+          <svg id="scoreChart" class="chart" viewBox="0 0 400 140" preserveAspectRatio="none"></svg>
+        </section>
+
+        <section class="panel">
+          <header class="panel-h">
+            <h3>Operator weights</h3>
+            <span class="muted small">adaptive · EMA α=0.1</span>
+          </header>
+          <div class="op-grid">
+            <div class="op-section">
+              <p class="op-label">Destroy</p>
+              <div id="destroyBars" class="op-bars"></div>
+            </div>
+            <div class="op-section">
+              <p class="op-label">Repair</p>
+              <div id="repairBars" class="op-bars"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <!-- TIMELINE -->
+  <footer class="timeline">
+    <div class="tl-controls">
+      <button id="rewindBtn" class="btn-icon" title="Restart">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+      </button>
+      <button id="stepBackBtn" class="btn-icon" title="Step backward">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button id="playBtn" class="btn-icon btn-icon-primary" title="Play / Pause">
+        <svg id="playIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button id="stepFwdBtn" class="btn-icon" title="Step forward">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+      </button>
+      <button id="endBtn" class="btn-icon" title="Jump to end">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zM13 6v12l8.5-6L13 6z"/></svg>
+      </button>
+    </div>
+    <div class="tl-scrub">
+      <input type="range" id="tlSlider" min="0" max="0" value="0" />
+      <div class="tl-meta">
+        <span id="tlPos">0</span><span class="muted"> / <span id="tlMax">0</span></span>
+      </div>
+    </div>
+    <div class="tl-speed">
+      <span class="muted small">Speed</span>
+      <div class="speed-pills" id="speedPills">
+        <button class="pill" data-speed="0.25">¼×</button>
+        <button class="pill" data-speed="1">1×</button>
+        <button class="pill pill-active" data-speed="4">4×</button>
+        <button class="pill" data-speed="16">16×</button>
+        <button class="pill" data-speed="64">64×</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SETTINGS DRAWER -->
+  <div id="settingsDrawer" class="drawer">
+    <div class="drawer-content">
+      <header class="drawer-header">
+        <h2>Settings</h2>
+        <button id="closeSettings" class="btn-icon" title="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        <details open>
+          <summary>Instance size</summary>
+          <div class="form-grid">
+            <label>Tutors <input type="number" id="cfgTutors" min="2" max="60" value="8" /></label>
+            <label>Rooms <input type="number" id="cfgRooms" min="2" max="40" value="6" /></label>
+            <label>Topics <input type="number" id="cfgTopics" min="1" max="12" value="4" /></label>
+            <label>Slots <input type="number" id="cfgSlots" min="4" max="500" value="40" /></label>
+            <label>Requests <input type="number" id="cfgRequests" min="4" max="600" value="60" /></label>
+            <label>Demand pressure <input type="number" id="cfgDemand" min="0.5" max="3" step="0.1" value="1.6" /></label>
+          </div>
+        </details>
+
+        <details open>
+          <summary>Cohorts &amp; diversity</summary>
+          <div class="form-grid">
+            <label>Academic-warning rate <input type="number" id="cfgAW" min="0" max="0.5" step="0.05" value="0.20" /></label>
+            <label>Pro-athlete rate <input type="number" id="cfgPA" min="0" max="0.5" step="0.05" value="0.10" /></label>
+            <label>Arabic rate <input type="number" id="cfgArabic" min="0" max="0.7" step="0.05" value="0.30" /></label>
+            <label>Bilingual rate <input type="number" id="cfgBilingual" min="0" max="0.5" step="0.05" value="0.10" /></label>
+            <label>Online rate <input type="number" id="cfgOnline" min="0" max="0.8" step="0.05" value="0.25" /></label>
+            <label>Accessibility rate <input type="number" id="cfgAccess" min="0" max="0.3" step="0.02" value="0.05" /></label>
+            <label>Class-conflict rate <input type="number" id="cfgConflict" min="0" max="1" step="0.05" value="0.40" /></label>
+          </div>
+        </details>
+
+        <details open>
+          <summary>ALNS parameters</summary>
+          <div class="form-grid">
+            <label>Max iterations <input type="number" id="cfgMaxIter" min="50" max="3000" value="300" /></label>
+            <label>Stall limit <input type="number" id="cfgStall" min="20" max="1000" value="80" /></label>
+            <label>Initial temperature <input type="number" id="cfgTemp" min="0.1" max="5" step="0.1" value="1" /></label>
+            <label>Cooling rate <input type="number" id="cfgCool" min="0.9" max="0.999" step="0.001" value="0.99" /></label>
+            <label>Destroy fraction <input type="number" id="cfgDestroyFrac" min="0.05" max="0.5" step="0.05" value="0.15" /></label>
+            <label>Backtracking cap <input type="number" id="cfgBTCap" min="2" max="16" value="8" /></label>
+            <label>Fairness floor <input type="number" id="cfgFairFloor" min="0" max="1" step="0.05" value="0.80" /></label>
+            <label>Seed <input type="number" id="cfgSeed" value="42" /></label>
+          </div>
+        </details>
+
+        <div class="drawer-actions">
+          <button id="resetCfg" class="btn btn-ghost">Reset to defaults</button>
+          <button id="applyAndRun" class="btn btn-primary">Apply &amp; run</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLTIP -->
+  <div id="tooltip" class="tooltip" role="tooltip"></div>
+
+  <!-- Visible boot status — vanishes once everything works -->
+  <div id="bootProbe" style="position:fixed;top:48px;left:14px;z-index:2000;background:#fff8db;border:1px solid #facc15;color:#713f12;padding:6px 10px;border-radius:6px;font-family:ui-monospace,monospace;font-size:11px;line-height:1.6;">
+    boot: <span id="bootStep">starting…</span>
+  </div>
+  <script>
+    window.__step = (s) => { const el = document.getElementById("bootStep"); if (el) el.textContent = s; };
+    window.addEventListener("error", (ev) => {
+      const el = document.getElementById("bootStep");
+      if (el) { el.textContent = "ERROR — " + (ev.message || ev.error); el.parentElement.style.background = "#fee2e2"; el.parentElement.style.borderColor = "#fca5a5"; el.parentElement.style.color = "#7f1d1d"; }
+    });
+    __step("loading generator.js");
+  </script>
+  <script src="generator.js"></script>
+  <script>__step("loading scheduler.js");</script>
+  <script src="scheduler.js"></script>
+  <script>__step("loading app.js");</script>
+  <script src="app.js"></script>
+  <script>
+    // If boot succeeded, app.instance will be populated; hide the probe.
+    setTimeout(() => {
+      if (window.app && window.app.instance && window.app.events && window.app.events.length) {
+        const p = document.getElementById("bootProbe");
+        if (p) p.remove();
+      } else {
+        __step("scripts loaded but app not initialized (open DevTools console for details)");
+      }
+    }, 800);
+  </script>
+</body>
+</html>

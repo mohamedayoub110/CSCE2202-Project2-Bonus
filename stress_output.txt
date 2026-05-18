@@ -1,0 +1,12 @@
+regime                          reqs   slots  tutors    phase1     final   iters    impr   objective        ms  feasible
+------------------------------------------------------------------------------------------------------------------------
+tiny_balanced                     60      40       8        19        19     200       0       14.15       8.0       yes
+small_undercapacity              120      60      10        43        44     586       2       23.37      32.6       yes
+cohort_heavy                     120      80      12        40        41     490       4        2.57      21.1       yes
+language_diverse                 204     120      16        68        71     504       6       14.70      34.4       yes
+online_heavy                     183     120      16        59        60     458       1       12.73      25.2       yes
+high_class_conflict              186     120      16        77        79     575       8       40.60      35.8       yes
+exam_week_pressure               400     150      20       123       125     940      11       45.43     184.8       yes
+medium                           417     250      25       176       182     618       8      129.09     112.9       yes
+large                            813     500      40       337       353     899      29      282.79     386.6       yes
+xl                              1578    1000      60       633       661     600      47      414.39     630.1       yes
