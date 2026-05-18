@@ -68,4 +68,4 @@ If reviewing in order of usefulness:
 
 ## Authorship
 
-Bonus submission by **Hamza Kamel**, 100% contribution. Built on top of the Project 2 / Thread A and Thread B work documented in the main project repository.
+Bonus submission by **Hamza Kamel and Mohamed Ayoub**, 100% contribution. Built on top of the Project 2 / Thread A and Thread B work documented in the main project repository.
