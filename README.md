@@ -1,6 +1,6 @@
 # Bonus — DA-ALNS-OR Tutoring Scheduler
 
-This folder is the CSCE 2202 Project 2 **bonus** submission for **Hamza Kamel**. It contains a from-scratch C++17 implementation of a two-phase metaheuristic scheduler (DA-ALNS-OR) for the bonus-reformulated tutoring scheduling problem, plus a synthetic instance generator, unit tests, a stress driver, and design documents.
+This folder is the CSCE 2202 Project 2 **bonus** submission for **Hamza Kamel and Mohamed Ayoub**. It contains a from-scratch C++17 implementation of a two-phase metaheuristic scheduler (DA-ALNS-OR) for the bonus-reformulated tutoring scheduling problem, plus a synthetic instance generator, unit tests, a stress driver, and design documents.
 
 ---
 
